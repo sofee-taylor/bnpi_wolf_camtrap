@@ -1,3 +1,6 @@
+# Figures dirs
+figures_manuscript*
+
 # History files
 .Rhistory
 .Rapp.history
