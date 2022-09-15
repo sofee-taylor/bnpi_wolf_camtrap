@@ -4,6 +4,11 @@
 (HU) Kameracsapdas elemzesek a DE "EvoZool" tanszekrol a BNPI felvetelei alapjan
 
 
+
+[![DOI](https://zenodo.org/badge/488482753.svg)](https://zenodo.org/badge/latestdoi/488482753)
+
+
+
 ## English guide
 
 ### Data
