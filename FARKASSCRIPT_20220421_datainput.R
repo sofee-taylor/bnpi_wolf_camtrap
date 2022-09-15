@@ -3,9 +3,8 @@ library('stringr')
 read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
 {
   
-  farkasmappa <- 'SET/DIRECTORY/FOR/CODES/AND/DATA'
-  #farkastablazat <- str_c(farkasmappa, '/Nagyragadozo_220403.csv')
-  farkastablazat <- str_c(farkasmappa, '/Nagyragadozo_csv_aktualis.csv')
+  farkasmappa <- './'
+  farkastablazat <- str_c(farkasmappa, '/ver7_Nagyragadozo_csv_220516.csv')
   
   #1. Adatok elokeszitese
   #1.a) tablazat beolvasas
@@ -229,23 +228,23 @@ read.cserkesz.farkas.data = function()
 }
 
 
-#nincs benne a repository-ban
-read.weather.lunar.data = function()
-{
-  
-  farkasmappa <- 'SET/DIRECTORY/FOR/CODES/AND/DATA'
-  idojarasmappa <- str_c(farkasmappa, '/weather')
-  
-  weather <- read.csv(str_c(idojarasmappa, '/52733_20150101_20180930.csv'), stringsAsFactors = FALSE)
-  weather2 <- read.csv(str_c(idojarasmappa, '/52744_20150101_20180930.csv'), stringsAsFactors = FALSE)
-  weather <- merge(weather, weather2, by = 'Date')
-  lunar <- read.csv(str_c(idojarasmappa, '/lunar.csv'), stringsAsFactors = FALSE)
-  colnames(lunar)[-1] <- str_c('lunar.', colnames(lunar))[-1]
-  weather <- merge(weather, lunar, by = 'Date')
-  weather$Site.x <- NULL
-  weather$Site.y <- NULL
-  weather$Date <- as.Date(weather$Date)
-  
-  return(weather)
-  
-}
+# #nincs benne a repository-ban
+# read.weather.lunar.data = function()
+# {
+#   
+#   farkasmappa <- 'SET/DIRECTORY/FOR/CODES/AND/DATA'
+#   idojarasmappa <- str_c(farkasmappa, '/weather')
+#   
+#   weather <- read.csv(str_c(idojarasmappa, '/52733_20150101_20180930.csv'), stringsAsFactors = FALSE)
+#   weather2 <- read.csv(str_c(idojarasmappa, '/52744_20150101_20180930.csv'), stringsAsFactors = FALSE)
+#   weather <- merge(weather, weather2, by = 'Date')
+#   lunar <- read.csv(str_c(idojarasmappa, '/lunar.csv'), stringsAsFactors = FALSE)
+#   colnames(lunar)[-1] <- str_c('lunar.', colnames(lunar))[-1]
+#   weather <- merge(weather, lunar, by = 'Date')
+#   weather$Site.x <- NULL
+#   weather$Site.y <- NULL
+#   weather$Date <- as.Date(weather$Date)
+#   
+#   return(weather)
+#   
+# }

@@ -1,10 +1,9 @@
 library(stringr)
 
 # Setting paths
-farkasmappa <- 'SET/DIRECTORY/FOR/CODES/AND/DATA'
-#farkastablazat <- str_c(farkasmappa, '/Nagyragadozo_220403.csv')
-idojarasmappa <- str_c(farkasmappa, '/weather')
-figdir <- str_c(farkasmappa, '/figures_manuscript_20220503/')
+farkasmappa <- './'
+#idojarasmappa <- str_c(farkasmappa, '/weather')
+figdir <- str_c(farkasmappa, '/figures_manuscript_20220516/')
 
 # Sourcing scripts
 source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_datainput.R') )
@@ -42,20 +41,20 @@ f.df = sectioning( f.df, autolength = napokat.becsuld, automethod = becsles.mods
 # Translating to english (currently only used for overlap functions)
 f.df.en = english.translation( f.df )
 
-# Trapping Gantt chart
-draw.bnpi.gantt.chart( f.df )
+# # Trapping Gantt chart
+# draw.bnpi.gantt.chart( f.df )
 
 # Overlap analysis
 overlap.analysis.bnpi( f.df.en )
 
-# Regression tree analysis
-measure.method = 'perc' # daily, percentage, count
-standard       = FALSE
-
-#tbl = measure.trappings.per.section.and.transform( f.df, method = measure.method, standardize = standard )
-#Az alabbi elemzesben a celvaltozo a szakaszokban eszlelt darabszama az egyes fajoknak, a magyarazo valtozok pedig a tobbi faj napi rataja
-tbl.target = measure.trappings.per.section.and.transform( f.df, method = 'count', standardize = FALSE )
-tbl.variables = measure.trappings.per.section.and.transform( f.df, method = 'daily', standardize = FALSE )
-
-crossmeasure = regression.tree.crossvalidate( tbl.var = tbl.variables, tbl.tar = tbl.target )
-regression.tree.analysis( tbl.var = tbl.variables, tbl.tar = tbl.target )
+# # Regression tree analysis
+# measure.method = 'perc' # daily, percentage, count
+# standard       = FALSE
+# 
+# #tbl = measure.trappings.per.section.and.transform( f.df, method = measure.method, standardize = standard )
+# #Az alabbi elemzesben a celvaltozo a szakaszokban eszlelt darabszama az egyes fajoknak, a magyarazo valtozok pedig a tobbi faj napi rataja
+# tbl.target = measure.trappings.per.section.and.transform( f.df, method = 'count', standardize = FALSE )
+# tbl.variables = measure.trappings.per.section.and.transform( f.df, method = 'daily', standardize = FALSE )
+# 
+# crossmeasure = regression.tree.crossvalidate( tbl.var = tbl.variables, tbl.tar = tbl.target )
+# regression.tree.analysis( tbl.var = tbl.variables, tbl.tar = tbl.target )
