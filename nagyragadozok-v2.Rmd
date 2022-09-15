@@ -1,0 +1,497 @@
+% The effect of large predators on game in Bükk region
+% Zsófia Szabó; Csaba Aranyi; Zoltán Barta
+% `r date()`
+
+---
+natbib: true
+fontsize: 12pt
+papersize: a4paper
+include-before:
+- \linenumbers
+header-includes:
+- \usepackage{lineno}
+- \usepackage{double_spaced}
+geometry:
+- margin=1in
+---
+
+```{r set-up, include=FALSE}
+## set the working directory
+## load the libraries
+## load local code
+#source("~/lib/markdown/produce_output.R")
+```
+
+# Load data
+
+First, we load the data.
+
+```{r load-data}
+r.df <- read.csv2(file="ver7_Nagyragadozo_csv_220516.csv",
+									fileEncoding="WINDOWS-1252")
+head(r.df)
+summary(r.df)
+```
+
+Here we concentrate on just some of the variables. We delete the rest and rename the remaining ones.
+
+```{r restructure-df}
+r.df <- r.df[,c(1,2,3,5,6,9,10)]
+names(r.df)
+names(r.df) <- c("creator", "location", "date", "object", "quantity", "start",
+								 "stop")
+names(r.df)
+head(r.df)
+```
+
+We need to convert several variables to be processable.
+
+We start with the dates.
+
+```{r conv-date}
+d <- as.Date(r.df$date, format="%Y.%m.%d")
+r.df$date <- d
+d <- as.Date(r.df$start, format="%Y.%m.%d")
+r.df$start <- d
+d <- as.Date(r.df$stop, format="%Y.%m.%d")
+r.df$stop <- d
+```
+
+Next, we convert variables to factors.
+
+```{r conv-factors}
+r.df$creator <- factor(r.df$creator)
+r.df$location <- factor(r.df$location)
+r.df$object <- factor(r.df$object)
+summary(r.df)
+```
+
+For this paper we only need the years between 2015 and 2019 (inclusive) and records done by Péter Gombkötő and Péter Mlakár. We filter out these records.
+
+> The filter on `creator` only works if only there are no other Péter than Gombkötő and Mlakár in `creator`!
+
+```{r filter-paper}
+i <- grepl("Péter", as.character(r.df$creator)) & r.df$date <=
+			as.Date("2019-12-31")
+r.df <- droplevels(r.df[i,])
+summary(r.df)
+```
+
+We have to recode `object` too, because (i) we do not use all of the observations (we omit rare objects) and (ii) we have to pool some of the object categories.
+
+```{r clean-objects}
+obj <- tolower(as.character(r.df$object))
+i <- obj %in% c("auto", "biciklis", "canis lupus",
+												"capreolus capreolus", "cervus elaphus", "ember",
+												"kamion", "lovas", "motoros", "sus scrofa", "traktor",
+												"vadasz", "vulpes vulpes")
+nrow(r.df)
+r.df <- droplevels(r.df[i,])
+r.df$object <- factor(tolower(as.character(r.df$object)))
+nrow(r.df)
+po <- as.character(r.df$object)
+po[r.df$object %in% c("auto", "kamion", "motoros", "traktor")] <- "m.vehicle"
+po[r.df$object %in% c("biciklis", "lovas")] <- "rider"
+po[r.df$object %in% c("ember", "vadasz")] <- "hiker"
+po <- sub("^(.).* ", "\\1.", po)
+table(r.df$object, po)
+r.df$pooled.obj <- factor(po)
+```
+
+In two records, `quantity` contains `NA`. We replace these `NA` with ones on the assumption that given the observation is correct then at least one object must have been observed.
+
+```{r rp-NAs}
+r.df$quantity[is.na(r.df$quantity)] <- 1
+```
+
+
+# Transform data
+
+For further analyses we have to create a table where each row represents a given day at a given location and contains the daily total of number of observations (`quantity`) for each object in `object` on this day and location. The function below performs this transformation for a given location.
+
+```{r trans-funtions}
+trans.data <- function(l, rdf=r.df) {
+	i <- rdf$location == l
+	days <- min(rdf$date[i]):max(rdf$date[i])
+	o.df <- data.frame(days=days, location=l)
+	for(v in levels(rdf$pooled.obj)) {
+		o.df[,v] <- 0
+	}
+	l.df <- rdf[i,]
+	for(r in 1:nrow(l.df)) {
+		d <- as.Date(l.df$date[r], origin="1970-01-01") == o.df$days
+		o.df[d, as.character(l.df$pooled.obj[r])] =
+					o.df[d, as.character(l.df$pooled.obj[r])] + l.df$quantity[r]
+	}
+	return(o.df)
+}
+```
+
+Next, we do the transformations for all locations and collect the results in a single data frame (`t.df`).
+
+```{r trans-data}
+locs <- levels(r.df$location)
+l <- locs[1]
+t.df <- trans.data(l, r.df)
+for(i in 2:length(locs)) {
+	r <- trans.data(locs[i], r.df)
+	t.df <- rbind(t.df, r)
+}
+summary(t.df)
+```
+
+From the transformed data base we remove the rows which have only zeros because these are not informative.
+
+```{r rm-zeros}
+s <- rowSums(t.df[,3:10])
+n.df <- t.df[s != 0,]
+```
+
+We also transform this data frame to a new one containing only zeros and ones (ones for cases where the number of objects seen is larger than zero).
+
+```{r trans-zero-one-df}
+z.df <- as.data.frame(apply(n.df[,3:10], 2, function(y) ifelse(y > 0, 1, 0)))
+```
+
+We save these data frames for future work.
+
+```{r save-dfs}
+save(r.df, t.df, n.df, z.df, file="transformed_data.Rdata")
+```
+
+
+
+# Analyse data
+
+We load the transformed data frames,
+
+```{r load-dfs}
+load(file="transformed_data.Rdata")
+```
+
+
+## Descriptive analysis
+
+We first calculate some simple statistics to explore patterns. For that we define a function to display a two-way frequency table and a Chi-square test on this table.
+
+```{r def-chisq-fun}
+game.chisq <- function(v1, v2, m.df = n.df) {
+	m <- table(m.df[,v1] > 0, m.df[,v2] > 0)
+	comm <- paste("dimnames(m) <- list(", v1, "=c('0', '1+'), ", v2,
+								"=c('0', '1+'))", sep="")
+	eval(parse(text=comm))
+	pm <- apply(m, 2, function(y) y/sum(y))
+	print(m)
+	print(pm)
+	print(chisq.test(m))
+	invisible(m)
+}
+```
+
+## XGBoost: daily occurrence
+
+Loading the necessary libraries.
+
+```{r load-libs}
+library(Ckmeans.1d.dp)
+library(ggplot2)
+library(xgboost)
+library(Matrix)
+library(DiagrammeR)
+library(vioplot)
+```
+
+### Function definitions
+
+The function below randomise the dependent variable within each stratum (location).
+
+```{r fun-randomise}
+randomise.label <- function(mlabel, mstrata) {
+	l <- mlabel
+	for(s in unique(mstrata)) {
+		i <- mstrata == s
+		l[i] <- sample(l[i])
+	}
+	return(l)
+}
+```
+
+The function below calculates the difference between the mean predicted probabilities of the labels (dependent variable, like the occurance of _C. capreolus_) for the discrete values of a predictor, like the occurrence of motorised vehicles. It returns a vector with the differences and the predicted values themselves..
+
+```{r fun-predict}
+predict.eff <- function(mdata, mmodell) {
+	p = predict(mmodell, newdata=mdata)
+	v <- numeric(3*ncol(mdata))
+	ns <- colnames(mdata)
+	names(v) <- c(paste(ns, ".d", sep=""), paste(ns, ".0", sep=""),
+                 paste(ns, ".1", sep=""))
+	for(n in ns) {
+		r <- tapply(p, mdata[,n], mean)
+		v[grep(n, names(v))] <- c(r[2] - r[1], r[1], r[2])
+	}
+	return(v)
+}
+```
+
+The function below perform a permutation test by randomly rearranging the labels (dependent variable) and recalculating the xgboost fits. It returns the fitted model, predicted differences (see the function above), the importance of the features (explanatory variables) and metrics of the fit calculated in k-fold cross validation. In the cases of predictions, importance and metrics, the first rows contain the values for the observations and the further rows contain the results for the random permutations.
+
+```{r fun-perm-test}
+perm.test <- function(mdata, mlabel, mstrata=rep(1, length(mlabel)),
+											n.reps=1000, objective="binary:logistic", nrounds=10,
+											nthread=1, nfold=10, stratified=TRUE,
+											metrics=list("rmse", "auc", "logloss")) {
+	bst.obs <- xgboost(data=mdata, label=mlabel, nrounds=nrounds,
+										 objective=objective, verbose=0)
+	pred.obs <- predict.eff(mdata, bst.obs)
+	imp.obs <- as.data.frame(xgb.importance(model=bst.obs))
+	imp.obs <- imp.obs[,1:2]
+	imp.obs$rank <- 1:nrow(imp.obs)
+	imp.obs$run <- "obs"
+	cv.obs <- xgb.cv(data=mdata, label=mlabel, nrounds=nrounds, nthread=nthread,
+									 nfold=nfold, stratified=stratified, metrics=metrics,
+									 verbose=FALSE)
+	r <- as.data.frame(cv.obs$evaluation_log)
+	m <- r[nrow(r),grep("^test_.*_mean", names(r))]
+
+	for(i in 1:n.reps) {
+		l <- randomise.label(mlabel, mstrata)
+		bst.p <- xgboost(data=mdata, label=l, nrounds=nrounds,
+											 objective=objective, verbose=0)
+		pred.p <- predict.eff(mdata, bst.p)
+		pred.obs <- rbind(pred.obs, pred.p)
+		imp.p <- as.data.frame(xgb.importance(model=bst.p))
+		imp.p <- imp.p[,1:2]
+		imp.p$rank <- 1:nrow(imp.p)
+		imp.p$run <- as.character(i)
+		imp.obs <- rbind(imp.obs, imp.p)
+		cv.p <- xgb.cv(data=mdata, label=l, nrounds=nrounds, nthread=nthread,
+										 nfold=nfold, stratified=stratified, metrics=metrics, verbose=FALSE)
+		r <- as.data.frame(cv.p$evaluation_log)
+		m <- rbind(m, r[nrow(r),grep("^test_.*_mean", names(r))])
+	}
+	return(list(bst.obs=bst.obs, predictions=pred.obs, importance=imp.obs,
+							metrics=m))
+}
+```
+
+The functions below plot the results of the permutation tests. The violin plots in `vioplot.predictions` give the distributions of the predicted values for the presence and absence of the given variable (feature) for the permutated dataset, the light grey lines show the changes in the permutated datasets. and the heavy solid line depicts the predicted probabilities and the changes for the observed data. The importance of the variable is given at the top of the plot.
+
+The function of `plot.diff` illustrates the effects of the variables (features) on the dependent variable (label). The shade of the columns indicate the importance of the given variable, the darker the shade the more important of the variable.
+
+```{r fun-pl-pred}
+vioplot.predictions <- function(object, n.var, lab.x=n.var, y.lim=NULL) {
+	if(is.null(y.lim)) {
+		y.lim <- range(object$predictions[,grep("^[a-z.]+\\.[01]",
+																						colnames(object$predictions))])
+	}
+	n.features <- object$bst.obs$nfeatures
+	imp.m <- as.data.frame(object$importance[1:n.features,])
+	imp <- imp.m$Gain[imp.m$Feature == n.var]
+	v0 <- object$predictions[,paste(n.var, ".0", sep="")]
+	v1 <- object$predictions[,paste(n.var, ".1", sep="")]
+	vioplot(v0[-1], v1[-1], bty="l", xaxt="n",
+					main=paste("importance =", round(imp, 3)),
+			 ylab="probability", xlab=lab.x, ylim=y.lim)
+	axis(side=1, at=c(1,2), label=c("no", "yes"))
+	segments(1, v0[-1], 2, v1[-1], col=adjustcolor("grey", 0.25), lwd=0.5)
+	segments(1, v0[1], 2, v1[1], col="black", lwd=3)
+}
+
+plot.diff <- function(object) {
+	d <- object$predictions[1, grep("\\.d", colnames(object$predictions))]
+	names(d) <- sub("\\.d$", "", names(d))
+	d <- d[object$importance$Feature[1:object$bst.obs$nfeatures]]
+	imp <- object$importance$Gain[1:object$bst.obs$nfeatures]
+	c.imp <- sapply(imp, function(y) adjustcolor("black", y))
+	barplot(d, ylim=c(-0.2,0), col=c.imp, ylab="change", xlab="features")
+	abline(h=0)
+}
+```
+
+
+The code below illustrates the use of the above functions.
+
+```{r example-run-perm-test, eval=FALSE}
+xgb.set.config(verbosity=0)
+p <- perm.test(mdata=as.matrix(z.df[,-c(1,2,7:8)]), mlabel=z.df$c.elaphus,
+															 n.reps=1000)
+imp <- p$importance
+head(imp)
+(t.imp <- table(imp$Feature[imp$rank == 1]))
+sort(t.imp/sum(t.imp))
+chisq.test(t.imp, p=imp$Gain[imp$run == "obs"])
+hist(imp$Gain[imp$rank == 1])
+hist(p$metrics[,1])
+abline(v=p$metrics[1,1])
+hist(p$metrics[,2])
+abline(v=p$metrics[1,2])
+layout(matrix(1:6, ncol=3))
+for(v in colnames(p$predictions)[1:5]) {
+	hist(p$predictions[,v], xlab=v, main="")
+	abline(v=p$predictions[1,v], lty=2)
+}
+layout(1)
+
+vioplot(Gain ~ Feature, p$importance[p$importance$run != "obs",])
+imp <- p$importance$Gain[p$importance$run == "obs"]
+names(imp) <- p$importance$Feature[p$importance$run == "obs"]
+imp <- imp[order(names(imp))]
+points(1:5, imp, pch=16, col="red")
+
+vioplot(Gain ~ rank, p$importance[p$importance$run != "obs",], ylim=c(0,1))
+imp <- p$importance$Gain[p$importance$run == "obs"]
+names(imp) <- p$importance$Feature[p$importance$run == "obs"]
+imp <- imp[order(names(imp))]
+points(1:5, imp, pch=16, col="red")
+
+layout(matrix(1:6, ncol=2, byrow=TRUE))
+par(mar=c(4,4,1,1)+0.1)
+for(v in p$importance$Feature[1:4]) {
+	vioplot.predictions(p, v)
+}
+plot.diff(p)
+par(opar)
+layout(1)
+```
+
+### Running the permutation tests
+
+To analyse the effects of large predators and human disturbances on the occurrance of big games, we run the permutation tests.
+
+```{r run-perm-test}
+perm.test.res <- "perm-tests.Rdata"
+if(file.exists(perm.test.res)) {
+	load(perm.test.res)
+} else {
+	p.CC <- perm.test(mdata=as.matrix(z.df[,-c(1,2,7)]), mlabel=z.df$c.capreolus,
+										mstrata=n.df$location, n.reps=1000)
+	p.CE <- perm.test(mdata=as.matrix(z.df[,-c(1,2,7:8)]), mlabel=z.df$c.elaphus,
+										mstrata=n.df$location, n.reps=1000)
+	p.SS <- perm.test(mdata=as.matrix(z.df[,-c(1,2,7:8)]), mlabel=z.df$s.scrofa,
+										mstrata=n.df$location, n.reps=1000)
+	save(p.CC, p.CE, p.SS, file=perm.test.res)
+}
+p.res <- list(c.capreolus=p.CC, c.elaphus=p.CE, s.scrofa=p.SS)
+```
+
+### Create plots
+
+```{r fun-beautify-label}
+beautify.label <- function(label) {
+	r <- sub("^(.)", "\\U\\1", label, perl=TRUE)
+	sub("\\.", ". ", r)
+}
+```
+
+We first plot the metrics to show that the models fitted to the observed data explain the data better than models fitted to randomised data.
+
+```{r pl-metrics}
+pdf.height <- 5
+pdf.width <- 12
+pdf(file="metrics.pdf", height=pdf.height, width=pdf.width)
+layout(matrix(1:3, nrow=1))
+s <- sapply(p.res, function(y) y$metrics$test_rmse_mean)
+vioplot(s[-1,], names=beautify.label(colnames(s)), ylim=range(s),
+				main="Squared root of mean squared error (rmse)",
+				xlab="models fitted")
+points(1:3, s[1,], pch="*", cex=3)
+s <- sapply(p.res, function(y) y$metrics$test_auc_mean)
+vioplot(s[-1,], names=beautify.label(colnames(s)), ylim=range(s),
+				main="Area under curve (auc)",
+				xlab="models fitted")
+points(1:3, s[1,], pch="*", cex=3)
+s <- sapply(p.res, function(y) y$metrics$test_logloss_mean)
+vioplot(s[-1,], names=beautify.label(colnames(s)), ylim=range(s),
+				main="logarithmic loss (logloss)",
+				xlab="models fitted")
+points(1:3, s[1,], pch="*", cex=3)
+layout(1)
+dev.off()
+system("convert metrics.pdf metrics.png", ignore.stderr=TRUE)
+```
+
+![Metrics characterising the fit of XGBoost models to the occurrence data of big games in the Bükk Region. The stars show the metrics for the models fitted to the observed data. The violin plots illustrates the distribution of 1000 metrics obtained by fitting models to randomly permutated data. In the cases of the metrics of rmse and logloss lower values indicate better fit. In case of auc, higher values mean better fit.](metrics.png)
+
+Next, the importance of the variables.
+
+```{r pl-importance}
+s <- sapply(p.res, function(y) {
+						z <- y$importance[y$importance$run == "obs",]
+						r <- z$Gain[order(z$Feature)]
+						names(r) <- z$Feature[order(z$Feature)]
+						r
+				})
+pdf(file="importance.pdf", height=pdf.height, width=pdf.width)
+mcol <- c("lightgrey", rep("darkgrey", 3), "lightgrey")
+layout(matrix(1:3, nrow=1))
+i <- 1
+for(n in names(s)) {
+	y.lab <- x.lab <- ""
+	imp <- s[[n]]
+	if(i == 2) {
+		x.lab <- "disturbance factors"
+	}
+	if(i == 1) {
+		y.lab <- "importance"
+	}
+	barplot(imp, main=beautify.label(n), col=mcol, ylab=y.lab, xlab=x.lab,
+					names=beautify.label(names(imp)))
+	box(bty="l")
+	if(i == 1) {
+		legend("topright", legend=c("human", "non-human"),
+					 fill=c("darkgrey", "lightgrey"), title="disturbance", bty="n")
+	}
+	i <- i+1
+}
+layout(1)
+dev.off()
+system("convert importance.pdf importance.png", ignore.stderr=TRUE)
+```
+
+![The importance of disturbance factors on the occurance of big games in the Bükk region. Importance indicates how important a given factor is in the prediction of occurrence of big games. Darker columns indicate human disturbance, lighter ones mesopredators.](importance.png)
+
+In turn, we plot the marginal effects of the disturbance factors.
+
+```{r pl-marginal-eff}
+pdf(file="effects.pdf", height=pdf.height, width=pdf.width)
+mcol <- c("lightgrey", rep("darkgrey", 3), "lightgrey")
+layout(matrix(1:3, nrow=1))
+i <- 1
+for(n in names(p.res)) {
+	p <- p.res[[n]]$predictions
+	p <- p[,grep("\\.d$", colnames(p))]
+	colnames(p) <- sub("\\.d$", "", colnames(p))
+	y.lab <- x.lab <- ""
+	if(i == 2) {
+		x.lab <- "disturbance factors"
+	}
+	if(i == 1) {
+		y.lab <- "change in occurance probability"
+	}
+	vioplot(p[-1,], names=beautify.label(colnames(p)), ylim=range(p),
+					main=beautify.label(n), ylab=y.lab, xlab=x.lab, col=mcol)
+	abline(h=0, lty=2, col="darkgrey")
+	points(1:ncol(p), p[1,], pch="*", cex=3)
+	if(i == 1) {
+		legend("topleft", legend=c("human", "non-human"),
+					 fill=c("darkgrey", "lightgrey"), title="disturbance", bty="n")
+	}
+	i <- i+1
+}
+layout(1)
+dev.off()
+system("convert effects.pdf effects.png", ignore.stderr=TRUE)
+```
+
+![The estimated effects of disturbance on the occurance of big games in the Bükk region. The stars mark the effects estimated from the observed data, while the violin plots illustrate the distributions of effects from randomly permutated data. Darker violins indicate human disturbance, lighter ones mesopredators.](effects.png)
+
+
+
+# End matters
+
+
+```{r session-info, include=TRUE, echo=TRUE, results="markup"}
+sessionInfo()
+```
+
+<!-- vim: set foldmethod=syntax: -->
