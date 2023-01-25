@@ -1,6 +1,6 @@
 library('stringr')
 
-read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
+read.bnp.farkas.data = function( extended = FALSE, hum.den = "none", covid = 'pre' )
 {
   
   farkasmappa <- './'
@@ -17,7 +17,7 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   
   f.df$Helyszin[f.df$Helyszin == "Istvan sir"] <- "Istvansir"
   f.df$Helyszin[f.df$Helyszin == "Harsas 2"] <- "Harsas02"
-  f.df$Helyszin[f.df$Helyszin == "Feketesár"] <- "Feketesar"
+  f.df$Helyszin[f.df$Helyszin == "FeketesÃ¡r"] <- "Feketesar"
   #f.df <- f.df[f.df$Helyszin != "Kajlaberc", ]
   f.df <- f.df[f.df$Helyszin != "Satai_rakodo_utan", ]
   f.df <- f.df[f.df$Helyszin != "Kacs", ]
@@ -27,7 +27,8 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   f.df$Stop = str_replace_all(f.df$Stop, '[.]', '-')
   
   f.df <- f.df[f.df$Keszitette != "Domboroczky Tibor", ]
-  f.df <- f.df[f.df$Keszitette != "Nemes Krisztián", ]
+  f.df <- f.df[f.df$Keszitette != "Nemes KrisztiÃ¡n", ]
+  f.df <- f.df[f.df$Keszitette != "PongrÃ¡cz ÃdÃ¡m", ]
   
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "canis lupus"] <- "Canis lupus"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "sus scrofa"] <- "Sus scrofa"
@@ -36,7 +37,7 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "vulpes vulpes"] <- "Vulpes vulpes"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "Lepus europeus"] <- "Lepus europaeus"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "Lepus europeaus"] <- "Lepus europaeus"
-  f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "nyúl"] <- "Lepus europaeus"
+  f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "nyÃºl"] <- "Lepus europaeus"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "Vadasz"] <- "vadasz"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "ember"] <- "Ember"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "Ember"] <- "gyalogos"
@@ -73,10 +74,10 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   f.df <- f.df[f.df$Felvetel.tartalma != "", ]
   
   f.df$Felvetel.tartalma2 = f.df$Felvetel.tartalma
-  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "gyalogos"] <- "emberi zavarás"
-  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "MMJ"] <- "emberi zavarás"
-  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "nyerges"] <- "emberi zavarás"
-  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "erdomunka"] <- "emberi zavarás"
+  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "gyalogos"] <- "emberi zavarÃ¡s"
+  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "MMJ"] <- "emberi zavarÃ¡s"
+  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "nyerges"] <- "emberi zavarÃ¡s"
+  f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "erdomunka"] <- "emberi zavarÃ¡s"
   
   f.df$Felvetel.tartalma3 = f.df$Felvetel.tartalma2
   f.df$Felvetel.tartalma3[f.df$Felvetel.tartalma3 == "Capreolus capreolus"] <- "nagyvad"
@@ -85,7 +86,7 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   
   
   #1.b) datum es ido atalakitasa
-  #Következõ a dátumok és idõk átkódolása. Az idõket az éjfélig eltelt másodpercekkel mérjük, a dátumok Date objektumokká lesznek alakítva.
+  #KÃ¶vetkezÃµ a dÃ¡tumok Ã©s idÃµk Ã¡tkÃ³dolÃ¡sa. Az idÃµket az Ã©jfÃ©lig eltelt mÃ¡sodpercekkel mÃ©rjÃ¼k, a dÃ¡tumok Date objektumokkÃ¡ lesznek alakÃ­tva.
   d <- as.Date(as.character(f.df$Datum))
   f.df$Datum <- d
   d <- as.Date(as.character(f.df$Start))
@@ -93,7 +94,7 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   d <- as.Date(as.character(f.df$Stop))
   f.df$Stop <- d
   
-  #Kiszámoljuk, hogy az adott esemény esetén hány napig mûködött a kamera:
+  #KiszÃ¡moljuk, hogy az adott esemÃ©ny esetÃ©n hÃ¡ny napig mÃ»kÃ¶dÃ¶tt a kamera:
   d <- f.df$Stop - f.df$Start
   
   #Covid-19 felosztas
@@ -104,7 +105,7 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   else
     f.df = f.df
   
-  #Az idõk átalakítása:
+  #Az idÃµk Ã¡talakÃ­tÃ¡sa:
   ido <- strsplit(as.character(f.df$Felvetel.kezdete), ":")
   ido <- sapply(ido, function(y) as.numeric(y[1])*3600 + as.numeric(y[2])*60 + as.numeric(y[3]))
   f.df$ErkIdo <- ido
@@ -114,23 +115,37 @@ read.bnp.farkas.data = function( extended = FALSE, covid = 'pre' )
   f.df$Tart <- f.df$TavIdo - f.df$ErkIdo
   f.df$Felvetel.idotartama <- NULL
   
-  #Néhány esetben a tartozkódási idõ átnyúlt az éjfélen, itt korrigálnunk kell.
+  #NÃ©hÃ¡ny esetben a tartozkÃ³dÃ¡si idÃµ Ã¡tnyÃºlt az Ã©jfÃ©len, itt korrigÃ¡lnunk kell.
   i <- !is.na(f.df$Tart) & f.df$Tart < 0
   f.df$Tart[i] <- 24*3600 - f.df$ErkIdo[i] + f.df$TavIdo[i]
   
-  #Szintén számolunk egy abszolút idõt is. Ez 2015-01-01 óta eltelt másodpercek száma.
+  #SzintÃ©n szÃ¡molunk egy abszolÃºt idÃµt is. Ez 2015-01-01 Ã³ta eltelt mÃ¡sodpercek szÃ¡ma.
   time.origin <- as.Date("2015-01-01")
   f.df$abs.time <- as.numeric(f.df$Datum - time.origin) * 24*3600 + f.df$ErkIdo
   
-  #1.c) Táblázat javítása
-  #Két megjegyzés oszlopunk van, összevonom a kettõt.
+  #Low-human / high-human suruseg szerinti bontas
+  helyszin.osszhossz = sapply(unique(f.df$Helyszin), function(x){ss=unique(f.df[which(f.df$Helyszin==x),c("Start","Stop")]); sum(difftime(ss$Stop, ss$Start, units="days"))})
+  helyszin.osszhuman = sapply(unique(f.df$Helyszin), function(x){length(which(f.df[which(f.df$Helyszin==x), "Felvetel.tartalma2"] == "emberi zavarÃ¡s"))})
+  human.density = helyszin.osszhuman / helyszin.osszhossz
+  middle.hd = median(human.density)
+  if (hum.den == 'high')
+  {
+    f.df = subset( f.df, Helyszin %in% names(which(human.density >= middle.hd)) )
+  }
+  else if (hum.den == 'low')
+  {
+    f.df = subset( f.df, Helyszin %in% names(which(human.density < middle.hd)) )
+  }
+  
+  #1.c) TÃ¡blÃ¡zat javÃ­tÃ¡sa
+  #KÃ©t megjegyzÃ©s oszlopunk van, Ã¶sszevonom a kettÃµt.
   m <- paste(f.df$Megjegyz., ":", f.df$Megjegyz..1)
   m[m == " : "] <- NA
   f.df$Megjegyzes <- m
   f.df$Megjegyz. <- NULL
   f.df$Megjegyz..1 <- NULL
   
-  #Az adattábla több oszlopot tartalmaz, amit valószínûleg nem fogunk használni. Az egyszerûség kedvéért törlöm ezeket.
+  #Az adattÃ¡bla tÃ¶bb oszlopot tartalmaz, amit valÃ³szÃ­nÃ»leg nem fogunk hasznÃ¡lni. Az egyszerÃ»sÃ©g kedvÃ©Ã©rt tÃ¶rlÃ¶m ezeket.
   f.df$Megjegyzes <- NULL
   f.df$Kep <- NULL
   f.df$Irta <- NULL
@@ -158,20 +173,20 @@ read.cserkesz.farkas.data = function()
   f.df$Species[f.df$Species == "oz"] <- "Capreolus capreolus"
   f.df$Species[f.df$Species == "capreolus capreolus"] <- "Capreolus capreolus"
   f.df$Species[f.df$Species == "diszno"] <- "Sus scrofa"
-  f.df$Species[f.df$Species == "disznó"] <- "Sus scrofa"
-  f.df$Species[f.df$Species == "róka"] <- "Vulpes vulpes"
+  f.df$Species[f.df$Species == "disznÃ³"] <- "Sus scrofa"
+  f.df$Species[f.df$Species == "rÃ³ka"] <- "Vulpes vulpes"
   f.df$Species[f.df$Species == "roka"] <- "Vulpes vulpes"
   f.df$Species[f.df$Species == "farkas"] <- "Canis lupus"
   f.df$Species[f.df$Species == "vadmacska"] <- "Felis silvestris"
   f.df$Species[f.df$Species == "borz"] <- "Meles meles"
   f.df$Species[f.df$Species == "mi"] <- "Human disturbance"
   f.df$Species[f.df$Species == "human"] <- "Human disturbance"
-  f.df$Species[f.df$Species == "én"] <- "Human disturbance"
+  f.df$Species[f.df$Species == "Ã©n"] <- "Human disturbance"
   f.df$Species[f.df$Species == "ember"] <- "Human disturbance"
   f.df$Species[f.df$Species == "traki"] <- "Human disturbance"
   f.df$Species[f.df$Species == "motor"] <- "Human disturbance"
   
-  f.df$Species[f.df$Species == "Autó"] <- "Human disturbance"
+  f.df$Species[f.df$Species == "AutÃ³"] <- "Human disturbance"
   f.df$Species[f.df$Species == "Biciklis"] <- "Human disturbance"
   f.df$Species[f.df$Species == "Ember"] <- "Human disturbance"
   f.df$Species[f.df$Species == "Motoros"] <- "Human disturbance"
