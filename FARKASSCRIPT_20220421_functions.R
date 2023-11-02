@@ -176,9 +176,9 @@ cooccurency_HCA <- function(tablazat, kepmappa, nev){
           axis.text.x = element_text(angle=90, hjust = 1,vjust=1,size = 12,face = "bold"),
           plot.title = element_text(size=20,face="bold"),
           axis.text.y = element_text(size = 12,face = "bold")) + 
-    #ggtitle("Észlelések száma") + 
+    #ggtitle("eszlelesek szama") + 
     theme(legend.title=element_text(face="bold", size=14)) + 
-    guides(fill=guide_legend(title="Észlelés")) +
+    guides(fill=guide_legend(title="eszleles")) +
     scale_x_discrete(name="") +
     scale_y_discrete(name="")
   #labs(fill="Corr. Coef.")
@@ -211,7 +211,7 @@ cooccurency_HCA <- function(tablazat, kepmappa, nev){
           axis.text.x = element_text(angle=90, hjust = 1,vjust=1,size = 12,face = "bold"),
           plot.title = element_text(size=20,face="bold"),
           axis.text.y = element_text(size = 12,face = "bold")) + 
-    #ggtitle("Észlelések száma") + 
+    #ggtitle("eszlelesek szama") + 
     theme(legend.title=element_text(face="bold", size=14)) + 
     scale_x_discrete(name="") +
     scale_y_discrete(name="")
@@ -245,7 +245,7 @@ cooccurency_HCA <- function(tablazat, kepmappa, nev){
           axis.text.x = element_text(angle=90, hjust = 1,vjust=1,size = 12,face = "bold"),
           plot.title = element_text(size=20,face="bold"),
           axis.text.y = element_text(size = 12,face = "bold")) + 
-    #ggtitle("Észlelések száma") + 
+    #ggtitle("eszlelesek szama") + 
     theme(legend.title=element_text(face="bold", size=14)) + 
     scale_x_discrete(name="") +
     scale_y_discrete(name="")
@@ -267,7 +267,7 @@ cooccurency_HCA <- function(tablazat, kepmappa, nev){
   tbl.clust = dendsort(tbl.clust, isReverse = TRUE)
   ggdendrogram(tbl.clust, rotate = TRUE) #+ 
     #ggtitle(str_c('Dendrogram ', str_split_fixed(nev, '_', 2)[1]))
-    #ggtitle('HCA egész éves átmeneti valószínûségek alapján')
+    #ggtitle('HCA egesz eves atmeneti valoszinusegek alapjan')
   ggsave(str_c(kepmappa, '/hca_dendrogram_', nev, '.pdf'), width = 8, height = 4)
   
 }
@@ -278,12 +278,12 @@ transition_matrix <- function(f.df)
 {
   library(reshape2)
   
-  #2.b)1. Az átmeneti mátrix értékeit minden szakaszra külön számoljuk, elkerülendõ a szakaszhatárokon átnyúló virtuális események okozta hibát. Továbbá azokat az esemény párokat nem veszük figyelembe, ahol valamelyik esemény Indet..
-  #Elõször létrehozzuk a mátrixot, ami tartalmazza az átmeneteket:
+  #2.b)1. Az ?tmeneti m?trix ?rt?keit minden szakaszra k?l?n sz?moljuk, elker?lend? a szakaszhat?rokon ?tny?l? virtu?lis esem?nyek okozta hib?t. Tov?bb? azokat az esem?ny p?rokat nem vesz?k figyelembe, ahol valamelyik esem?ny Indet..
+  #El?sz?r l?trehozzuk a m?trixot, ami tartalmazza az ?tmeneteket:
   esemenyek <- unique(f.df$Felvetel.tartalma)
   m.trans <- matrix(0, nrow=length(esemenyek), ncol=length(esemenyek),
                     dimnames=list(Var1=esemenyek, Var2=esemenyek))
-  #Utána következik a mátrix feltöltése:
+  #Ut?na k?vetkezik a m?trix felt?lt?se:
   #library(corrplot)
   for (sz in unique(f.df$szakaszID)) {
     szakasz <- f.df[f.df$szakaszID == sz,]
@@ -296,9 +296,9 @@ transition_matrix <- function(f.df)
     }
   }
   #corrplot(m.trans, is.corr=FALSE)
-  #Az ábra azt mutatja, hogy sok olyan eseményünk van, ami ritkán fordul elõ, ezért nem igazán érdemes velük foglalkozni.
+  #Az ?bra azt mutatja, hogy sok olyan esem?ny?nk van, ami ritk?n fordul el?, ez?rt nem igaz?n ?rdemes vel?k foglalkozni.
   
-  # #2.b)2. A következõ próbálkozás során kizárom a 100-nál kevesebbszer elõforduló eseményeket.
+  # #2.b)2. A k?vetkez? pr?b?lkoz?s sor?n kiz?rom a 100-n?l kevesebbszer el?fordul? esem?nyeket.
   # esetek <- table(f.df$Felvetel.tartalma)
   # esemenyek <- names(esetek[esetek >= 100])
   # ff <- f.df[f.df$Felvetel.tartalma %in% esemenyek,]
@@ -307,7 +307,7 @@ transition_matrix <- function(f.df)
   # keves.esemeny <- names(sz.l[sz.l < lh])
   # ff <- ff[!(ff$szakaszID %in% keves.esemeny),]
   # 
-  # #Ezután feltöltjük az átmeneti mátrixot.
+  # #Ezut?n felt?ltj?k az ?tmeneti m?trixot.
   # m.trans <- matrix(0, nrow=length(esemenyek), ncol=length(esemenyek),
   #                   dimnames=list(Var1=esemenyek, Var2=esemenyek))
   # for (sz in unique(ff$szakaszID)) {
@@ -324,16 +324,16 @@ transition_matrix <- function(f.df)
   m.trans <- m.trans[names(sort(rs)), names(sort(rs))]
   #m.trans <- m.trans[-1, -1] # remove "Indet."
   #corrplot(m.trans, is.corr=FALSE)
-  #Az átmeneti események mátrixa nehezen értelmezhetõ, mert a különbözõ események nagyon eltérõ számban fordulnak elõ.
+  #Az ?tmeneti esem?nyek m?trixa nehezen ?rtelmezhet?, mert a k?l?nb?z? esem?nyek nagyon elt?r? sz?mban fordulnak el?.
   
-  #2.b)3. Ezért az események számára normálnunk kell. Ez megadja az átmeneti valószínûségeket.
-  #Következik az átmeneti valószínûségek számolása.
+  #2.b)3. Ez?rt az esem?nyek sz?m?ra norm?lnunk kell. Ez megadja az ?tmeneti val?sz?n?s?geket.
+  #K?vetkezik az ?tmeneti val?sz?n?s?gek sz?mol?sa.
   p.trans <- m.trans/rowSums(m.trans)
   #corrplot(p.trans, is.corr=FALSE)
-  #Ez már sokkal használhatóbb, de még mindig kissé félrevezetõ, mivel az egyes események elõfordulási valószínûsége nem egyenletes.
+  #Ez m?r sokkal haszn?lhat?bb, de m?g mindig kiss? f?lrevezet?, mivel az egyes esem?nyek el?fordul?si val?sz?n?s?ge nem egyenletes.
   
-  #2.b)4. Az erre való korrekcióként kiszámoljuk az események elõfordulási valószínûségét, vagyis azt a valószínûséget, ami megadja,
-  #hogy egy adott esemény milyen valószínûséggel fordul elõ, ha az események véletlenszerûen következnek egymás után.
+  #2.b)4. Az erre val? korrekci?k?nt kisz?moljuk az esem?nyek el?fordul?si val?sz?n?s?g?t, vagyis azt a val?sz?n?s?get, ami megadja,
+  #hogy egy adott esem?ny milyen val?sz?n?s?ggel fordul el?, ha az esem?nyek v?letlenszer?en k?vetkeznek egym?s ut?n.
   #layout(1:2)
   #corrplot(p.trans, is.corr=FALSE)
   #matplot(t(p.trans), type="b")
@@ -341,8 +341,8 @@ transition_matrix <- function(f.df)
   #matlines(exp.tr, lw=2)
   #plot of chunk calc-expected
   #layout(1)
-  #Az alsó ábrán a vastag folytonos vonal mutatja a véletlen elófordulás esetén várható átmeneti valószínûséget.
-  #Erre érdemes korrigálni, hogy lássuk, az adott átmeneti valószínûség kisebb vagy nagyobb ennél a véletlen várakozásnál.
+  #Az als? ?br?n a vastag folytonos vonal mutatja a v?letlen el?fordul?s eset?n v?rhat? ?tmeneti val?sz?n?s?get.
+  #Erre ?rdemes korrig?lni, hogy l?ssuk, az adott ?tmeneti val?sz?n?s?g kisebb vagy nagyobb enn?l a v?letlen v?rakoz?sn?l.
   pp <- apply(p.trans, 1, function(y) y/exp.tr)
   pp[which(pp == 0.0)] = 1.0
   #layout(1:2)

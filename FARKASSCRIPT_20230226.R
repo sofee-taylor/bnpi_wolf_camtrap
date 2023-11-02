@@ -3,36 +3,34 @@ library(stringr)
 # Setting paths
 farkasmappa <- './'
 #idojarasmappa <- str_c(farkasmappa, '/weather')
-figdir <- str_c(farkasmappa, '/figures_manuscript_20220516/')
+figdir <- str_c(farkasmappa, '/figures_manuscript_20230226/')
 
 # Sourcing scripts
-source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_datainput.R') )
+source( paste0(farkasmappa, 'FARKASSCRIPT_20230226_datainput.R') )
 source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_sectioning.R') )
-source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_overlap.R') )
+source( paste0(farkasmappa, 'FARKASSCRIPT_20230226_overlap.R') )
 source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_regrtree.R') )
 source( paste0(farkasmappa, 'FARKASSCRIPT_20220421_functions.R') )
 
 # Create output dirs
 create.figdirs( )
 
+# Specialis idoszakok kijelolese
+summer.months = c(4, 5, 6, 7, 8, 9)
+winter.months = c(1, 2, 3, 10, 11, 12)
+full.year = NULL
+
 # Input data
 extended.data = FALSE # az elemzesek nincsenek beallitva a plusz fajokkal kibovitett tablazatra
+months.data = full.year #summer.months, winter.months, full.year, or custom
 covid.data = 'pre' # pre, vagy post, amit a 2020-01-17 datum valaszt el. barmi mas eseten a teljes adathalmazt olvassa be
-human.density = 'none'
-f.df = read.bnp.farkas.data( extended = extended.data, hum.den = human.density, covid = 'pre' )
+human.density = 'high' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
+f.df = read.bnp.farkas.data( extended = extended.data, hum.den = human.density, data.months = months.data, covid = 'pre' )
 ##weather = read.weather.lunar.data()
 ##f.df <- merge(f.df, weather, by.x = 'Datum', by.y = 'Date')
 
 # Survey elemzes - csak a bovitett adathalmazra van tesztelve
 if (extended.data) f.summ = summarize.monthly.surveys( f.df )
-
-# Specialis idoszakok kijelolese
-nyari.honapok = c(4, 5, 6, 7, 8, 9)
-teli.honapok  = c(1, 2, 3, 10, 11, 12)
-#f.df$tavasz <- sapply(f.df$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% c(3))
-#f.df$nyar <- sapply(f.df$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% nyari.honapok)
-#f.df$tel <- sapply(f.df$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% teli.honapok)
-#f.df$vadaszideny <- sapply(f.df$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% c(1, 2, 9, 10, 11, 12))
 
 # # Forming continuous SECTIONS
 # napokat.becsuld = TRUE
@@ -49,7 +47,7 @@ f.df.en = english.translation( f.df )
 # draw.bnpi.gantt.chart( f.df )
 
 # Overlap analysis
-outputname.postfix = ""
+outputname.postfix = "_HHD"
 overlap.analysis.bnpi( f.df.en, outputname.postfix )
 
 # # Regression tree analysis

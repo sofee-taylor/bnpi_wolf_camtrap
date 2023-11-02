@@ -45,17 +45,18 @@ overlap.analysis = function ( f.df.o, table.postfix='' )
   sus.male   = sapply(f.df.o$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% c(8, 9, 10))
   sus.breed  = sapply(f.df.o$Datum, function(y) as.numeric(str_split(as.character(y), '-')[[1]][2]) %in% c(11, 12))
   
-  yearly.periods = data.frame(full_year = TRUE, winter = gen.winter, wolf_pup = gen.wlfpup,
-                              cap_birth = cap.birth, cap_rut = cap.rut,
-                              cer_birth = cer.birth, cer_prerut = cer.prerut, cer_rut = cer.rut,
-                              sus_gest = sus.gest, sus_birth = sus.birth, sus_earlysumm = sus.esumm, sus_solemale = sus.male, sus_breed = sus.breed)
+  # yearly.periods = data.frame(full_year = TRUE, winter = gen.winter, wolf_pup = gen.wlfpup,
+  #                             cap_birth = cap.birth, cap_rut = cap.rut,
+  #                             cer_birth = cer.birth, cer_prerut = cer.prerut, cer_rut = cer.rut,
+  #                             sus_gest = sus.gest, sus_birth = sus.birth, sus_earlysumm = sus.esumm, sus_solemale = sus.male, sus_breed = sus.breed)
   
+  yearly.periods = data.frame(full_year = TRUE, winter = gen.winter, summer = gen.summer)
   
   
   for( p in colnames(yearly.periods) )
   {
     
-    overlap.dir = str_c( figdir.olap, subdir, p, '/', sep = '/')
+    overlap.dir = str_c( figdir.olap, subdir, paste0(p, table.postfix), '/', sep = '/')
     dir.create(overlap.dir, showWarnings = FALSE, recursive = TRUE)
     
     f.df.overlap = f.df.o[yearly.periods[,p],]
