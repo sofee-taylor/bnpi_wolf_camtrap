@@ -3,7 +3,7 @@ library(stringr)
 # Setting paths
 farkasmappa <- './'
 #idojarasmappa <- str_c(farkasmappa, '/weather')
-figdir <- str_c(farkasmappa, '/figures_manuscript_20230226/')
+figdir <- str_c(farkasmappa, '/figures_manuscript_20231106/')
 
 # Sourcing scripts
 source( paste0(farkasmappa, 'FARKASSCRIPT_20230226_datainput.R') )
@@ -23,9 +23,9 @@ full.year = NULL
 # Input data
 extended.data = FALSE # az elemzesek nincsenek beallitva a plusz fajokkal kibovitett tablazatra
 months.data = full.year #summer.months, winter.months, full.year, or custom
-covid.data = 'pre' # pre, vagy post, amit a 2020-01-17 datum valaszt el. barmi mas eseten a teljes adathalmazt olvassa be
-human.density = 'high' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
-f.df = read.bnp.farkas.data( extended = extended.data, hum.den = human.density, data.months = months.data, covid = 'pre' )
+covid.data = 'none' # pre, vagy post, amit a 2020-01-17 datum valaszt el. barmi mas eseten a teljes adathalmazt olvassa be
+human.density = 'none' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
+f.df = read.bnp.farkas.data( extended = extended.data, hum.den = human.density, data.months = months.data, covid = covid.data )
 ##weather = read.weather.lunar.data()
 ##f.df <- merge(f.df, weather, by.x = 'Datum', by.y = 'Date')
 
@@ -47,8 +47,8 @@ f.df.en = english.translation( f.df )
 # draw.bnpi.gantt.chart( f.df )
 
 # Overlap analysis
-outputname.postfix = "_HHD"
-overlap.analysis.bnpi( f.df.en, outputname.postfix )
+outputname.postfix = ""
+olap.matrix = overlap.analysis.bnpi( f.df.en, outputname.postfix )
 
 # # Regression tree analysis
 # measure.method = 'perc' # daily, percentage, count
