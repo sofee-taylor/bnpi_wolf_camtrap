@@ -499,6 +499,7 @@ overlap.analysis.bnpi = function ( f.df.en, table.postfix='' )
   f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "rider"] <- "Rider"
   #f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "MV"] <- "Human disturbance"
   #f.df.overlap <- f.df.overlap[f.df.overlap$Felvetel.tartalma != "Vulpes vulpes", ]
+  f.df.o <- f.df.o[f.df.o$Felvetel.tartalma != "Felis silvestris", ]
   
   f.df.o = f.df.o[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma')]
   

@@ -1,9 +1,9 @@
 library('stringr')
 
-read.bnp.farkas.data = function( extended = FALSE, hum.den = "none", data.months = NULL, covid = 'pre' )
+read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den = "none", data.months = NULL, covid = 'pre' )
 {
   
-  farkasmappa <- './'
+  #farkasmappa <- './'
   farkastablazat <- str_c(farkasmappa, '/ver7_Nagyragadozo_csv_220516.csv')
   
   #1. Adatok elokeszitese
@@ -55,7 +55,7 @@ read.bnp.farkas.data = function( extended = FALSE, hum.den = "none", data.months
   if (!extended)
   {
     f.df <- f.df[f.df$Felvetel.tartalma != "Lepus europaeus", ]
-    #f.df <- f.df[f.df$Felvetel.tartalma != "Felis silvestris", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Felis silvestris", ]
     #f.df <- f.df[f.df$Felvetel.tartalma != "Meles meles", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Martes foina", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Martes", ]
