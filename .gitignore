@@ -1,6 +1,12 @@
 # Figures dirs
 figures_manuscript*
 
+# Misc. files
+Barta_elemzes/
+Újragondolt/**
+!Újragondolt/dhat4_klaszterezes_NMDS.R
+!Újragondolt/Co-occurrence_script.R
+
 # History files
 .Rhistory
 .Rapp.history
