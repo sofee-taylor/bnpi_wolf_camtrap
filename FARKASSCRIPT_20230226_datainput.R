@@ -56,7 +56,7 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den =
   {
     f.df <- f.df[f.df$Felvetel.tartalma != "Lepus europaeus", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Felis silvestris", ]
-    #f.df <- f.df[f.df$Felvetel.tartalma != "Meles meles", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Meles meles", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Martes foina", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Martes", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Ovis orientalis", ]
