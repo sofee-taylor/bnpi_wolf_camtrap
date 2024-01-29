@@ -6,6 +6,7 @@ Barta_elemzes/
 Újragondolt/**
 !Újragondolt/dhat4_klaszterezes_NMDS.R
 !Újragondolt/Co-occurrence_script.R
+!Újragondolt/f_df_en.csv
 
 # History files
 .Rhistory

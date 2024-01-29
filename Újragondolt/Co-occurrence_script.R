@@ -3,6 +3,7 @@
 
 # Szükséges csomag betöltése
 library(dplyr)
+library(corrplot)
 
 # Segédfüggvények
 zip <- function(...) {
@@ -38,11 +39,18 @@ f.df.diff3 <- f.df.en %>%
          Felvetel.kezdete = as.POSIXct(paste(Datum, Felvetel.kezdete), format="%Y-%m-%d %H:%M:%S"),
          Felvetel.vege = as.POSIXct(paste(Datum, Felvetel.vege), format="%Y-%m-%d %H:%M:%S")) %>%
   group_by(Helyszin, Start) %>%
-  mutate(abs.time.diff = as.numeric(difftime(Felvetel.kezdete, lag(Felvetel.vege), units = "secs") / 3600)) %>%
+  arrange(Felvetel.kezdete) %>%
+  mutate(abs.time.diff = ifelse((Felvetel.kezdete == lag(Felvetel.kezdete)) |
+                                (Felvetel.vege == lag(Felvetel.vege)) |
+                                ((Felvetel.kezdete > lag(Felvetel.kezdete)) & (Felvetel.kezdete < lag(Felvetel.vege))),
+                                0.0,
+                                as.numeric(difftime(Felvetel.kezdete, lag(Felvetel.vege), units = "secs") / 3600))) %>%
   filter(ifelse(is.na(abs.time.diff), TRUE, Felvetel.tartalma != lag(Felvetel.tartalma, default = first(Felvetel.tartalma))))
 
 # head(as.data.frame(f.df.diff1), 10)
 head(as.data.frame(f.df.diff3), 10)
+#View(f.df.diff3[unique(unlist(zip(which(f.df.diff3$abs.time.diff < 0)-1, which(f.df.diff3$abs.time.diff < 0)))),])
+
 
 #MAGYARÁZÓ VÁLTOZÓK
 #Bükki kamerák táblázatának leszűrése

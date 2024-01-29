@@ -4,11 +4,14 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den =
 {
   
   #farkasmappa <- './'
-  farkastablazat <- str_c(farkasmappa, '/ver7_Nagyragadozo_csv_220516.csv')
+  farkastablazat <- str_c(farkasmappa, '/ver8_Nagyragadozo_csv_240125.csv')
   
   #1. Adatok elokeszitese
   #1.a) tablazat beolvasas
   f.df <- read.csv(farkastablazat, sep = ';', stringsAsFactors = FALSE, encoding = 'latin1')
+  
+  #print(which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma',
+  #                               'Felvetel.vege', 'Start', 'Stop')] )))
   
   f.df$Felvetel.kezdete[which(sapply(f.df$Felvetel.kezdete, function(a) {length(str_match_all(a,':')[[1]])}) == 1)] =
     paste0(f.df$Felvetel.kezdete[which(sapply(f.df$Felvetel.kezdete, function(a) {length(str_match_all(a,':')[[1]])}) == 1)], ':00')
@@ -156,6 +159,12 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den =
   f.df$Megjegyzes <- NULL
   f.df$Kep <- NULL
   f.df$Irta <- NULL
+  
+  #Duplikatumok keresese az atnevezesek utan
+  f.df <- f.df[-which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma',
+                                 'Start', 'Stop')] )),]
+  f.df <- f.df[-which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.tartalma',
+                                 'Felvetel.vege', 'Start', 'Stop')] )),]
   
   return(f.df)
 }
