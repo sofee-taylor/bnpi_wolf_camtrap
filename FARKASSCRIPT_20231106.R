@@ -1,9 +1,10 @@
 library(stringr)
 
 # Setting paths
-farkasmappa <- 'D:/PhD/PROJECTS/TempSpatialOverlap_2015-2019/R/'
+#farkasmappa <- 'D:/PhD/PROJECTS/TempSpatialOverlap_2015-2019/R/'
+farkasmappa <- 'D:/Work/bnpi_wolf_camtrap/'
 #idojarasmappa <- str_c(farkasmappa, '/weather')
-figdir <- str_c(farkasmappa, '/figures_manuscript_20231106/')
+figdir <- str_c(farkasmappa, '/figures_manuscript_20240304/')
 
 # Sourcing scripts
 source( paste0(farkasmappa, 'FARKASSCRIPT_20230226_datainput.R') )
@@ -24,7 +25,7 @@ full.year = NULL
 extended.data = FALSE # az elemzesek nincsenek beallitva a plusz fajokkal kibovitett tablazatra
 months.data = full.year #summer.months, winter.months, full.year, or custom
 covid.data = 'none' # pre, vagy post, amit a 2020-01-17 datum valaszt el. barmi mas eseten a teljes adathalmazt olvassa be
-human.density = 'none' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
+human.density = 'low' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
 f.df = read.bnp.farkas.data( farkasmappa = farkasmappa, extended = extended.data, hum.den = human.density, data.months = months.data, covid = covid.data )
 ##weather = read.weather.lunar.data()
 ##f.df <- merge(f.df, weather, by.x = 'Datum', by.y = 'Date')
@@ -42,13 +43,17 @@ if (extended.data) f.summ = summarize.monthly.surveys( f.df )
 
 # Translating to english (currently only used for overlap functions)
 f.df.en = english.translation( f.df )
+#f.df.en2 = read.csv('D:/Work/bnpi_wolf_camtrap/Újragondolt/f_df_en.csv')
 
 # # Trapping Gantt chart
 # draw.bnpi.gantt.chart( f.df )
 
 # Overlap analysis
-outputname.postfix = ""
-olap.matrix = overlap.analysis.bnpi( f.df.en, outputname.postfix )
+#outputname.postfix = ""
+outputname.postfix = human.density
+merge.human.disturbance = TRUE
+merge.games = FALSE
+olap.matrix = overlap.analysis.bnpi( f.df.en, outputname.postfix, merge.human.disturbance, merge.games )
 
 # # Regression tree analysis
 # measure.method = 'perc' # daily, percentage, count
