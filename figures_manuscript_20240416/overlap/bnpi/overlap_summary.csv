@@ -1,0 +1,22 @@
+"database";"period";"i";"j";"dhat4";"CImin";"CImax";"Ni";"Nj"
+"bnpi";"full_year";"Canis lupus";"MV";0,41;0,37250505233605;0,442640236539815;747;2564
+"bnpi";"full_year";"Canis lupus";"Cervus elaphus";0,89;0,857062777251225;0,925695578486701;747;2037
+"bnpi";"full_year";"Canis lupus";"Hiker";0,32;0,292200117277665;0,349813330188849;747;1561
+"bnpi";"full_year";"Canis lupus";"Capreolus capreolus";0,84;0,801441239881504;0,869091385627126;747;1456
+"bnpi";"full_year";"Canis lupus";"Sus scrofa";0,8;0,772224013431797;0,835604562715784;747;1752
+"bnpi";"full_year";"Canis lupus";"Vulpes vulpes";0,85;0,818160960831687;0,888291871845755;747;1740
+"bnpi";"full_year";"MV";"Cervus elaphus";0,4;0,38022175772934;0,423243863603465;2564;2037
+"bnpi";"full_year";"MV";"Hiker";0,79;0,757132343420241;0,815736392640446;2564;1561
+"bnpi";"full_year";"MV";"Capreolus capreolus";0,53;0,506606545851111;0,560289812131736;2564;1456
+"bnpi";"full_year";"MV";"Sus scrofa";0,23;0,211438262292235;0,246204493206611;2564;1752
+"bnpi";"full_year";"MV";"Vulpes vulpes";0,35;0,325050675763725;0,36905943322329;2564;1740
+"bnpi";"full_year";"Cervus elaphus";"Hiker";0,34;0,320996710884793;0,366885880665711;2037;1561
+"bnpi";"full_year";"Cervus elaphus";"Capreolus capreolus";0,85;0,818257021410379;0,871907667871303;2037;1456
+"bnpi";"full_year";"Cervus elaphus";"Sus scrofa";0,81;0,782626954939384;0,840625233381953;2037;1752
+"bnpi";"full_year";"Cervus elaphus";"Vulpes vulpes";0,86;0,839372856922732;0,884769741201849;2037;1740
+"bnpi";"full_year";"Hiker";"Capreolus capreolus";0,44;0,420096812233358;0,469473817900246;1561;1456
+"bnpi";"full_year";"Hiker";"Sus scrofa";0,18;0,161770778063745;0,199759813128107;1561;1752
+"bnpi";"full_year";"Hiker";"Vulpes vulpes";0,3;0,275111191769356;0,321797274977725;1561;1740
+"bnpi";"full_year";"Capreolus capreolus";"Sus scrofa";0,66;0,632611881652042;0,67974370944217;1456;1752
+"bnpi";"full_year";"Capreolus capreolus";"Vulpes vulpes";0,74;0,70585446736879;0,7682169519374;1456;1740
+"bnpi";"full_year";"Sus scrofa";"Vulpes vulpes";0,88;0,856750337916091;0,90044563913825;1752;1740
