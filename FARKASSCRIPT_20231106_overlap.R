@@ -398,8 +398,8 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
   return_fullyear_matrix = NULL
   species = unique(f.df.o$Felvetel.tartalma)
   #Temporal modification: change species order only for this run
-  species = c('Human disturbance', 'Canis lupus', 'Vulpes vulpes',
-              'Cervus elaphus', 'Capreolus capreolus', 'Sus scrofa')
+  #species = c('Human disturbance', 'Canis lupus', 'Vulpes vulpes',
+  #            'Cervus elaphus', 'Capreolus capreolus', 'Sus scrofa')
   #species = c('Human disturbance', 'Canis lupus', 'Vulpes vulpes', 'Ungulates')
   
   
@@ -470,7 +470,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
     summtable = rbind( summtable, summtable.p )
     
     # Create matrix of overlap coefficients (dhat4 matrix)
-    d4.mat = matrix(0, nrow = length(species), ncol = length(species))
+    d4.mat = matrix(0.0, nrow = length(species), ncol = length(species))
     d4.mat[lower.tri(d4.mat, diag = FALSE)] = summtable$dhat4
     colnames(d4.mat) = species
     rownames(d4.mat) = species
@@ -483,6 +483,24 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
     nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
     graphics.off()
     tiff(str_c(overlap.dir, paste0('dhat4_matrix.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
+    plot(hcd,  ylab = "Height", nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
+    dev.off()
+    
+    # Create matrix of overlap coefficients (1-dhat4 matrix)
+    d4.mat = matrix(1.0, nrow = length(species), ncol = length(species))
+    d4.mat[lower.tri(d4.mat, diag = FALSE)] = summtable$dhat4
+    d4.mat = 1.0 - d4.mat
+    colnames(d4.mat) = species
+    rownames(d4.mat) = species
+    write.table(d4.mat, str_c(overlap.dir, '/dhat4_inv_matrix.csv'), sep = ';', row.names = FALSE, col.names = TRUE, dec = ',')
+    
+    if (p == 'full_year')
+      return_fullyear_matrix = d4.mat
+    
+    hcd = as.dendrogram( hclust(as.dist(d4.mat), method = 'average') )
+    nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
+    graphics.off()
+    tiff(str_c(overlap.dir, paste0('dhat4_inv_matrix.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
     plot(hcd,  ylab = "Height", nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
     dev.off()
   }
@@ -504,6 +522,7 @@ overlap.analysis.bnpi = function ( f.df.en, table.postfix='', merge.hd=FALSE, me
   #f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "MV"] <- "Human disturbance"
   #f.df.overlap <- f.df.overlap[f.df.overlap$Felvetel.tartalma != "Vulpes vulpes", ]
   f.df.o <- f.df.o[f.df.o$Felvetel.tartalma != "Felis silvestris", ]
+  f.df.o <- f.df.o[f.df.o$Felvetel.tartalma != "Rider", ]
   
   if (merge.hd)
   {

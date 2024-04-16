@@ -1,6 +1,6 @@
 library('stringr')
 
-read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den = "none", data.months = NULL, covid = 'pre' )
+read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellaneous = FALSE, hum.den = "none", data.months = NULL, covid = 'pre' )
 {
   
   #farkasmappa <- './'
@@ -65,17 +65,20 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den =
     f.df <- f.df[f.df$Felvetel.tartalma != "Ovis orientalis", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Sciurus vulgaris", ]
   }
-  f.df <- f.df[f.df$Felvetel.tartalma != "kutya", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "indet.", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "Indet.", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "Inder", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "fakitermeles", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "erdomunka", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "Ovis aries", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "Lynx lynx", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "Bos taurus taurus", ]
-  f.df <- f.df[f.df$Felvetel.tartalma != "", ]
-  
+  if (!miscellaneous)
+  {
+    f.df <- f.df[f.df$Felvetel.tartalma != "kutya", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "indet.", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Indet.", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Inder", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "fakitermeles", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "erdomunka", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Ovis aries", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Lynx lynx", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "Bos taurus taurus", ]
+    f.df <- f.df[f.df$Felvetel.tartalma != "", ]
+  }
+      
   f.df$Felvetel.tartalma2 = f.df$Felvetel.tartalma
   f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "gyalogos"] <- "emberi zavarás"
   f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "MMJ"] <- "emberi zavarás"
