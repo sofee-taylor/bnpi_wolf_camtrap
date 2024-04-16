@@ -540,7 +540,13 @@ overlap.analysis.bnpi = function ( f.df.en, table.postfix='', merge.hd=FALSE, me
   
   f.df.o = f.df.o[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma')]
   
-  overlap.analysis.mx( f.df.o, table.postfix )
+  cat("Compute overlap (Dhat4) matrix\n")
+  olap.matrix = overlap.analysis.mx( f.df.o, table.postfix )
+
+  cat("Plot NMDS and clustering\n")
+  nmds.analysis(olap.matrix)
+  
+  return (olap.matrix)
 }
 
 
@@ -563,4 +569,92 @@ overlap.analysis.full = function ( f.df.en, f.cs, table.postfix='' )
   f.df.o = rbind(f.df.o, f.cs)
   
   overlap.analysis( f.df.o, table.postfix )
+}
+
+
+nmds.analysis = function ( olap.matrix )
+{
+  library(ecodist)
+  library(ggplot2)
+  library(vegan)
+  library(smerc)
+  
+  if (length(sys.nframe()) > 1)
+  {
+    caller.str = deparse(sys.calls()[[sys.nframe()-1]], nlines = 1)
+    if ( str_detect(caller.str, 'bnpi') )
+      subdir = 'bnpi'
+    else if ( str_detect(caller.str, 'cserkesz') )
+      subdir = 'cserkesz'
+    else if ( str_detect(caller.str, 'full') )
+      subdir = 'full'
+    else
+      subdir = 'other'
+  } else
+  {
+    subdir = 'other'
+  }
+      
+  
+  overlap.dir = str_c( figdir.olap, subdir, "full_year", '/', sep = '/')
+  dir.create(overlap.dir, showWarnings = FALSE, recursive = TRUE)
+  
+  # Compute ideal number of clusters with elbow method
+  wss <- numeric(length = nrow(olap.matrix))
+  for (i in 1:(nrow(olap.matrix)-1)) {
+    cat(i)
+    kmeans_model <- kmeans(olap.matrix, centers = i)
+    wss[i] <- sum((olap.matrix - kmeans_model$centers[kmeans_model$cluster,])^2)
+  }
+  
+  # Find elbow point
+  elbow_point <- elbow_point(x=1:length(wss),y=wss)
+  
+  # Plot inertia changes by number of clusters
+  tiff(str_c(overlap.dir, paste0('nmds_elbow.tiff')), width = 6, height = 4, res = 300, units = 'in', compression = c('lzw'))
+  plot(1:nrow(olap.matrix), wss, type = "b", pch = 19, frame = FALSE, main = "Elbow Method",
+       xlab = "Number of Clusters", ylab = "Within Sum of Squares")
+  elbow_point
+  points(elbow_point$x, elbow_point$y, col = "red", cex = 2, pch = 4)
+  text(elbow_point$x, elbow_point$y, labels = sprintf("   %d", elbow_point$idx), pos = 4)
+  dev.off()
+  
+  # Optimal number of clusters
+  optimal_clusters <- elbow_point$idx
+  cat("Optimal number of clusters: ", optimal_clusters, "\n")
+  
+  # Create clustering tree
+  distance_matrix <- as.dist(olap.matrix)
+  hierarchical_clustering <- hclust(distance_matrix, method = "ward.D2")
+
+  # Set cluster colors on dendrogram
+  gg_color_hue <- function(n) {
+    hues = seq(15, 375, length = n + 1)
+    hcl(h = hues, l = 65, c = 100)[1:n]
+  }
+  cols = gg_color_hue(optimal_clusters)
+  nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
+  tiff(str_c(overlap.dir, paste0('nmds_dendrogram.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
+  plot(as.dendrogram(hierarchical_clustering, hang = -1), main = "Dhat4 distances (Ward.D2)", xlab = "", sub = NULL,
+       nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
+  rect.hclust(hierarchical_clustering, k = optimal_clusters, border = cols) #2:optimal_clusters)
+  dev.off()
+  
+  # Update NMDS plot with optimal number of clusters
+  nmds_result_optimal <- metaMDS(distance_matrix, k = 2)
+  
+  # Adding clusters
+  nmds_result_optimal$clust <- cutree(hierarchical_clustering, k = optimal_clusters)
+  
+  # Plotting
+  g <- ggplot(data = data.frame(nmds_result_optimal$points, clust = factor(nmds_result_optimal$clust)),
+              aes(x = nmds_result_optimal$points[, 1], y = nmds_result_optimal$points[, 2], color = clust, label = row.names(nmds_result_optimal$points))) +
+    geom_point(aes(shape = clust), size = 3) +
+    geom_text(size = 3, hjust = -0.1, vjust = 0) +
+    xlim(1.1*min(nmds_result_optimal$points[,'MDS1']), 1.1*max(nmds_result_optimal$points[,'MDS1'])) +
+    ylim(1.1*min(nmds_result_optimal$points[,'MDS2']), 1.1*max(nmds_result_optimal$points[,'MDS2'])) +
+    ggtitle("") + xlab('NMDS1') + ylab('NMDS2') +
+    theme_bw() + theme(legend.position="none")
+  ggsave(str_c(overlap.dir, paste0('nmds_plot.tiff')), width = 6, height = 5, dpi=300, units = "in", compression = "lzw")
+  return(g)
 }
