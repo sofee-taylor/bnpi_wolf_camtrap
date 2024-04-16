@@ -161,10 +161,14 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, hum.den =
   f.df$Irta <- NULL
   
   #Duplikatumok keresese az atnevezesek utan
-  f.df <- f.df[-which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma',
-                                 'Start', 'Stop')] )),]
-  f.df <- f.df[-which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.tartalma',
-                                 'Felvetel.vege', 'Start', 'Stop')] )),]
+  idx = which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma',
+                                 'Start', 'Stop')] ))
+  if (length(idx)>0)
+    f.df <- f.df[-idx,]
+  idx = which(duplicated(f.df[,c('Helyszin', 'Datum', 'Felvetel.tartalma',
+                                 'Felvetel.vege', 'Start', 'Stop')] ))
+  if (length(idx)>0)
+    f.df <- f.df[-idx,]
   
   return(f.df)
 }

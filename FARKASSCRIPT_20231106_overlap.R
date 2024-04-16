@@ -346,7 +346,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
   library('overlap')  
   library('stringr')
   
-  caller.str = deparse(sys.calls()[[sys.nframe()-1]])
+  caller.str = deparse(sys.calls()[[sys.nframe()-1]], nlines = 1)
   if ( str_detect(caller.str, 'bnpi') )
     subdir = 'bnpi'
   else if ( str_detect(caller.str, 'cserkesz') )
@@ -397,6 +397,10 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
   
   return_fullyear_matrix = NULL
   species = unique(f.df.o$Felvetel.tartalma)
+  #Temporal modification: change species order only for this run
+  species = c('Human disturbance', 'Canis lupus', 'Vulpes vulpes',
+              'Cervus elaphus', 'Capreolus capreolus', 'Sus scrofa')
+  #species = c('Human disturbance', 'Canis lupus', 'Vulpes vulpes', 'Ungulates')
   
   
   for( p in colnames(yearly.periods) )
@@ -489,7 +493,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
 }
 
 
-overlap.analysis.bnpi = function ( f.df.en, table.postfix='' )
+overlap.analysis.bnpi = function ( f.df.en, table.postfix='', merge.hd=FALSE, merge.game=FALSE )
 {
   f.df.o = f.df.en
   #f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "hiker"] <- "Human disturbance"
@@ -500,6 +504,20 @@ overlap.analysis.bnpi = function ( f.df.en, table.postfix='' )
   #f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "MV"] <- "Human disturbance"
   #f.df.overlap <- f.df.overlap[f.df.overlap$Felvetel.tartalma != "Vulpes vulpes", ]
   f.df.o <- f.df.o[f.df.o$Felvetel.tartalma != "Felis silvestris", ]
+  
+  if (merge.hd)
+  {
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "MV"] <- "Human disturbance"
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "Hiker"] <- "Human disturbance"
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "Rider"] <- "Human disturbance"
+  }
+  
+  if (merge.game)
+  {
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "Cervus elaphus"] <- "Ungulates"
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "Capreolus capreolus"] <- "Ungulates"
+    f.df.o$Felvetel.tartalma[f.df.o$Felvetel.tartalma == "Sus scrofa"] <- "Ungulates"
+  }
   
   f.df.o = f.df.o[,c('Helyszin', 'Datum', 'Felvetel.kezdete', 'Felvetel.tartalma')]
   
