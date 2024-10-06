@@ -437,7 +437,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
                            units = "radians", modulo = "2pi", template = "none" )
         
         # Create overlap image
-        tiff(str_c(overlap.dir, paste0('olap_', species[i], '_', species[j], '.tiff')), width = 6, height = 5, res = 300, units = 'in', compression = c('lzw'))
+        tiff(str_c(overlap.dir, paste0('olap_', species[i], '_', species[j], '.tiff')), width = 6, height = 5, res = 600, units = 'in', compression = c('lzw'))
         overlapPlot(as.numeric(circ.i), as.numeric(circ.j), kmax = 5, linewidth = c(2,2), olapcol = "#d9f2d9",
                     main = NULL, ylab = "Activity density", cex.lab = 1.25, ylim = c(0.0,0.145))
         legend("topleft", legend = c(species[i], species[j]), col = c("black", "blue"), lty = c(1,2), cex = 0.8)
@@ -482,7 +482,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
     hcd = as.dendrogram( hclust(as.dist(d4.mat), method = 'average') )
     nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
     graphics.off()
-    tiff(str_c(overlap.dir, paste0('dhat4_matrix.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
+    tiff(str_c(overlap.dir, paste0('dhat4_matrix.tiff')), width = 6, height = 6, res = 600, units = 'in', compression = c('lzw'))
     plot(hcd,  ylab = "Height", nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
     dev.off()
     
@@ -500,7 +500,7 @@ overlap.analysis.mx = function ( f.df.o, table.postfix='' )
     hcd = as.dendrogram( hclust(as.dist(d4.mat), method = 'average') )
     nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
     graphics.off()
-    tiff(str_c(overlap.dir, paste0('dhat4_inv_matrix.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
+    tiff(str_c(overlap.dir, paste0('dhat4_inv_matrix.tiff')), width = 6, height = 6, res = 600, units = 'in', compression = c('lzw'))
     plot(hcd,  ylab = "Height", nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
     dev.off()
   }
@@ -572,27 +572,33 @@ overlap.analysis.full = function ( f.df.en, f.cs, table.postfix='' )
 }
 
 
-nmds.analysis = function ( olap.matrix )
+nmds.analysis = function ( olap.matrix, subdir = NULL )
 {
   library(ecodist)
   library(ggplot2)
   library(vegan)
   library(smerc)
   
-  if (length(sys.nframe()) > 1)
+  if (is.null(subdir))
   {
-    caller.str = deparse(sys.calls()[[sys.nframe()-1]], nlines = 1)
-    if ( str_detect(caller.str, 'bnpi') )
-      subdir = 'bnpi'
-    else if ( str_detect(caller.str, 'cserkesz') )
-      subdir = 'cserkesz'
-    else if ( str_detect(caller.str, 'full') )
-      subdir = 'full'
-    else
+    if (length(sys.nframe()) > 1)
+    {
+      caller.str = deparse(sys.calls()[[sys.nframe()-1]], nlines = 1)
+      if ( str_detect(caller.str, 'bnpi') )
+        subdir = 'bnpi'
+      else if ( str_detect(caller.str, 'cserkesz') )
+        subdir = 'cserkesz'
+      else if ( str_detect(caller.str, 'full') )
+        subdir = 'full'
+      else
+        subdir = 'other'
+    } else
+    {
       subdir = 'other'
+    }
   } else
   {
-    subdir = 'other'
+    subdir = subdir
   }
       
   
@@ -611,7 +617,7 @@ nmds.analysis = function ( olap.matrix )
   elbow_point <- elbow_point(x=1:length(wss),y=wss)
   
   # Plot inertia changes by number of clusters
-  tiff(str_c(overlap.dir, paste0('nmds_elbow.tiff')), width = 6, height = 4, res = 300, units = 'in', compression = c('lzw'))
+  tiff(str_c(overlap.dir, paste0('nmds_elbow.tiff')), width = 6, height = 4, res = 600, units = 'in', compression = c('lzw'))
   plot(1:nrow(olap.matrix), wss, type = "b", pch = 19, frame = FALSE, main = "Elbow Method",
        xlab = "Number of Clusters", ylab = "Within Sum of Squares")
   elbow_point
@@ -634,7 +640,7 @@ nmds.analysis = function ( olap.matrix )
   }
   cols = gg_color_hue(optimal_clusters)
   nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
-  tiff(str_c(overlap.dir, paste0('nmds_dendrogram.tiff')), width = 6, height = 6, res = 300, units = 'in', compression = c('lzw'))
+  tiff(str_c(overlap.dir, paste0('nmds_dendrogram.tiff')), width = 6, height = 6, res = 600, units = 'in', compression = c('lzw'))
   plot(as.dendrogram(hierarchical_clustering, hang = -1), main = "Dhat4 distances (Ward.D2)", xlab = "", sub = NULL,
        nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
   rect.hclust(hierarchical_clustering, k = optimal_clusters, border = cols) #2:optimal_clusters)
@@ -655,6 +661,6 @@ nmds.analysis = function ( olap.matrix )
     ylim(1.1*min(nmds_result_optimal$points[,'MDS2']), 1.1*max(nmds_result_optimal$points[,'MDS2'])) +
     ggtitle("") + xlab('NMDS1') + ylab('NMDS2') +
     theme_bw() + theme(legend.position="none")
-  ggsave(str_c(overlap.dir, paste0('nmds_plot.tiff')), width = 6, height = 5, dpi=300, units = "in", compression = "lzw")
+  ggsave(str_c(overlap.dir, paste0('nmds_plot.tiff')), width = 6, height = 5, dpi=600, units = "in", compression = "lzw")
   return(g)
 }

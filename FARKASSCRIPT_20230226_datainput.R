@@ -1,6 +1,7 @@
 library('stringr')
+library('lubridate')
 
-read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellaneous = FALSE, hum.den = "none", data.months = NULL, covid = 'pre' )
+read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellaneous = FALSE, merge.time = NULL, hum.den = "none", data.months = NULL, covid = 'pre' )
 {
   
   #farkasmappa <- './'
@@ -76,8 +77,10 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellan
     f.df <- f.df[f.df$Felvetel.tartalma != "Ovis aries", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Lynx lynx", ]
     f.df <- f.df[f.df$Felvetel.tartalma != "Bos taurus taurus", ]
-    f.df <- f.df[f.df$Felvetel.tartalma != "", ]
+    #f.df <- f.df[f.df$Felvetel.tartalma != "", ]
   }
+  
+  f.df <- f.df[f.df$Felvetel.tartalma != "", ]
       
   f.df$Felvetel.tartalma2 = f.df$Felvetel.tartalma
   f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "gyalogos"] <- "emberi zavarás"
@@ -128,6 +131,40 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellan
   #Szintén számolunk egy abszolút idõt is. Ez 2015-01-01 óta eltelt másodpercek száma.
   time.origin <- as.Date("2015-01-01")
   f.df$abs.time <- as.numeric(f.df$Datum - time.origin) * 24*3600 + f.df$ErkIdo
+  
+  #Azonos eszlelesek osszevonasa meghatarozott idon belul
+  if (!is.null(merge.time))
+  {
+    f.df$Datetime.kezdete = as.POSIXlt(paste(f.df$Datum, f.df$Felvetel.kezdete), c("%Y-%m-%d %H:%M:%S"), tz = "CET")
+    f.df$Datetime.vege = as.POSIXlt(paste(f.df$Datum, f.df$Felvetel.vege), c("%Y-%m-%d %H:%M:%S"), tz = "CET")
+    
+    turnday = which(as.numeric(difftime(f.df$Datetime.vege, f.df$Datetime.kezdete)) < 0)
+    f.df$Datetime.vege[turnday] = f.df$Datetime.vege[turnday] + days(1)
+    
+    f.df = f.df[with(f.df, order(Helyszin, Datetime.kezdete)),]
+    rownames(f.df) = NULL
+    f.df$samenext = merge.time + 1
+    f.df$toremove = 0
+    for (r in dim(f.df)[1]:2)
+    {
+      if (f.df$Helyszin[r] == f.df$Helyszin[r-1] & f.df$Felvetel.tartalma[r] == f.df$Felvetel.tartalma[r-1])
+      {
+        f.df$samenext[r-1] = as.numeric(difftime(f.df$Datetime.kezdete[r], f.df$Datetime.vege[r-1], units = 'mins'))
+        if (f.df$samenext[r-1] <= merge.time)
+        {
+          f.df$Felvetel.vege[r-1] = f.df$Felvetel.vege[r]
+          f.df$Datetime.vege[r-1] = f.df$Datetime.vege[r]
+          f.df$TavIdo[r-1] = f.df$TavIdo[r]
+          f.df$Tart[r-1] <- f.df$TavIdo[r-1] - f.df$ErkIdo[r-1]
+          f.df$Mennyi[r-1] = f.df$Mennyi[r-1] + f.df$Mennyi[r]
+          f.df$toremove[r] = 1
+        }
+      }
+    }
+    f.df = f.df[-which(f.df$toremove == 1),]
+    f.df$samenext = NULL
+    f.df$toremove = NULL
+  }
   
   #Szures a kijelolt honapokra
   if (!is.null(data.months))
