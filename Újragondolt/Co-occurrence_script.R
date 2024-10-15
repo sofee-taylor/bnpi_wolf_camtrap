@@ -30,7 +30,8 @@ zip <- function(...) {
 #   filter(Felvetel.tartalma != lag(Felvetel.tartalma, default = first(Felvetel.tartalma)))
 
 # Adatok betoltese
-f.df.en.backup  = read.csv('D:/PhD/PROJECTS/TempSpatialOverlap_2015-2019/R/Újragondolt/f_df_en.csv')
+#f.df.en.backup  = read.csv('D:/PhD/PROJECTS/TempSpatialOverlap_2015-2019/R/Újragondolt/f_df_en.csv')
+f.df.en.backup  = read.csv('D:/Work/bnpi_wolf_camtrap/Újragondolt/f_df_en_60.csv', sep=';')
 f.df.en = f.df.en.backup
 f.df.en <- f.df.en[f.df.en$Felvetel.tartalma != "Meles meles", ]
 f.df.en <- f.df.en[f.df.en$Felvetel.tartalma != "rider", ]

@@ -55,6 +55,7 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellan
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "lovaskocsi"] <- "bicikli/lovas"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "lovas"] <- "bicikli/lovas"
   f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == "fakitermeles"] <- "erdomunka"
+  f.df$Felvetel.tartalma[f.df$Felvetel.tartalma == ""] <- "Indet."
   
   if (!extended)
   {
@@ -79,8 +80,6 @@ read.bnp.farkas.data = function( farkasmappa = './', extended = FALSE, miscellan
     f.df <- f.df[f.df$Felvetel.tartalma != "Bos taurus taurus", ]
     #f.df <- f.df[f.df$Felvetel.tartalma != "", ]
   }
-  
-  f.df <- f.df[f.df$Felvetel.tartalma != "", ]
       
   f.df$Felvetel.tartalma2 = f.df$Felvetel.tartalma
   f.df$Felvetel.tartalma2[f.df$Felvetel.tartalma2 == "gyalogos"] <- "emberi zavarás"
