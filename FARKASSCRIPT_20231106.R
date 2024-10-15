@@ -27,7 +27,7 @@ misc.data = FALSE # az elemzesek nincsenek beallitva a plusz fajokkal kibovitett
 months.data = full.year #summer.months, winter.months, full.year, or custom
 covid.data = 'none' # pre, vagy post, amit a 2020-01-17 datum valaszt el. barmi mas eseten a teljes adathalmazt olvassa be
 human.density = 'none' #'none' is for all data, 'high' for high human density and 'low' for low human density areas 
-event.merge.time = NULL # time in minutes to merge same recordings
+event.merge.time = 60 # time in minutes to merge same recordings
 f.df = read.bnp.farkas.data( farkasmappa = farkasmappa, extended = extended.data, miscellaneous = misc.data,
                              hum.den = human.density, data.months = months.data, covid = covid.data, merge.time = event.merge.time)
 ##weather = read.weather.lunar.data()
@@ -74,11 +74,12 @@ f.df.en = f.df.en |>
 # draw.bnpi.gantt.chart( f.df )
 
 # Overlap analysis
-outputname.postfix = ""
+#outputname.postfix = ""
+outputname.postfix = "merged"
 #outputname.postfix = human.density
-merge.human.disturbance = FALSE
-merge.games = FALSE
-olap.matrix = overlap.analysis.bnpi( f.df.en.2, outputname.postfix, merge.human.disturbance, merge.games )
+merge.human.disturbance = TRUE
+merge.games = TRUE
+olap.matrix = overlap.analysis.bnpi( f.df.en, outputname.postfix, merge.human.disturbance, merge.games )
 
 # # Regression tree analysis
 # measure.method = 'perc' # daily, percentage, count
