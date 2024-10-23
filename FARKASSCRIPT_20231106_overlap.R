@@ -578,6 +578,7 @@ nmds.analysis = function ( olap.matrix, subdir = NULL )
   library(ggplot2)
   library(vegan)
   library(smerc)
+  library(dendextend)
   
   if (is.null(subdir))
   {
@@ -640,10 +641,12 @@ nmds.analysis = function ( olap.matrix, subdir = NULL )
   }
   cols = gg_color_hue(optimal_clusters)
   nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), cex = 0.7, col = "blue")
-  tiff(str_c(overlap.dir, paste0('nmds_dendrogram.tiff')), width = 6, height = 6, res = 600, units = 'in', compression = c('lzw'))
-  plot(as.dendrogram(hierarchical_clustering, hang = -1), main = "Dhat4 distances (Ward.D2)", xlab = "", sub = NULL,
-       nodePar = nodePar, edgePar = list(col = 2:3, lwd = 2:1))
-  rect.hclust(hierarchical_clustering, k = optimal_clusters, border = cols) #2:optimal_clusters)
+  dend_object = as.dendrogram(hierarchical_clustering) #hang.dendrogram(as.dendrogram(hierarchical_clustering))
+  tiff(str_c(overlap.dir, paste0('nmds_dendrogram.tiff')), width = 5, height = 5, res = 600, units = 'in', compression = c('lzw'))
+  plot(color_branches(dend_object, col = cols, k = optimal_clusters), main = "Dhat4 distances (Ward.D2)", xlab = "", sub = NULL,
+       nodePar = nodePar)#, edgePar = list(col = 2:3, lwd = 2:1))
+  #rect.hclust(hierarchical_clustering, k = optimal_clusters, border = cols) #2:optimal_clusters)
+  rect.dendrogram(dend_object, k = optimal_clusters, lower_rect = -0.4, border = cols)
   dev.off()
   
   # Update NMDS plot with optimal number of clusters
@@ -660,6 +663,7 @@ nmds.analysis = function ( olap.matrix, subdir = NULL )
     xlim(1.1*min(nmds_result_optimal$points[,'MDS1']), 1.1*max(nmds_result_optimal$points[,'MDS1'])) +
     ylim(1.1*min(nmds_result_optimal$points[,'MDS2']), 1.1*max(nmds_result_optimal$points[,'MDS2'])) +
     ggtitle("") + xlab('NMDS1') + ylab('NMDS2') +
+    #scale_color_manual(values = cols) +
     theme_bw() + theme(legend.position="none")
   ggsave(str_c(overlap.dir, paste0('nmds_plot.tiff')), width = 6, height = 5, dpi=600, units = "in", compression = "lzw")
   return(g)
