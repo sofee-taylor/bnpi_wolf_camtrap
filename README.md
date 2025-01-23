@@ -4,33 +4,25 @@
 (HU) Kameracsapdas elemzesek a DE "EvoZool" tanszekrol a BNPI felvetelei alapjan
 
 
+## Publications
+Szabó, Zs., Gombkötő, P., Aranyi, S.C., Patkó, L., Patkó, D. & Barta, Z. \
+Camera trapping of forest mammals in Bükk Mountain, Hungary. \
+COMMUNITY ECOLOGY ([2024](https://doi.org/10.1007/s42974-024-00225-2)).
 
-[![DOI](https://zenodo.org/badge/488482753.svg)](https://zenodo.org/badge/latestdoi/488482753)
 
+## Guide
 
+This repository contains cleaned sample data and analysis scripts that produced results shown in <i>Szabó et al. (2024)</i>.
 
-## English guide
+### Data sample
+<b>sample/f_df_en_60_sample.csv</b>
 
-### Data
-<b>ver7_Nagyragadozo_csv_220516.csv</b>
+Although the complete data processing methods are shared in the FARKASSCRIPT_[yyyymmdd]_datainput.R script, raw tabular data, camera trapping images, and meteorological information are not included in the repository.
 
 ### Reproducing temporal overlap analysis
-Use the script <b>FARKASSCRIPT_[yyyymmdd].R</b>
+Use the script <b>FARKASSCRIPT_[yyyymmdd]_sample.R</b> as the starting point.
 
-### Reproducing co-occurrence analysis
-Look for the code in the <b>nagyragadozok-v2.Rmd</b> markdown document
+For detailed implementation see the FARKASSCRIPT_[yyyymmdd]_overlap.R script. Function <i>overlap.analysis.bnpi()</i> makes conditional data processing, then calls worker functions <i>overlap.analysis.mx()</i> and <i>nmds.analysis</i>.
 
-## Hungarian guide
-## Hasznalat
-### 1. Allitsd be a letoltott repozitorium eleresi utjat
-a FARKASSCRIPT_\*.R fajlban, es a FARKASSCRIPT_\*_datainput.R fuggvenyeiben
-
-### 2. Allitsd be a kimeneti mappat
-a FARKASSCRIPT_\*.R fajlban a 'figdir' valtozot
-
-### 3. Elemzes futtatasa
-Futtasd a FARKASSCRIPT_\*.R szkriptet. A beallitott 'figdir' mappaba keszulnek el az eredmenyek.
-
-## Megjegyzesek
-Az adatok csak a BNPI felvetelei alapjan keszitett tablazatot tartalmazzak,
-egyeb adathalmazt, valamint meteorologiai adatokat nem.
+### Reproducing Multi-state modeling (MSM) analysis
+Look for the code in the "Grouping by 60 minutes" section of the <b>encounter.qmd</b> markdown document. Note, that MSM modeling can take hours, or even days (!!!) for larger datasets.
