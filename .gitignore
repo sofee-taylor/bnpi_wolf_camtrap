@@ -1,17 +1,18 @@
 # Figures dirs
-figures_manuscript_20220516/
-figures_manuscript_20230226/
-figures_manuscript_20231106/
-figures_manuscript_20240304/
-figures_manuscript_20241006/
+#figures_manuscript_20220516/
+#figures_manuscript_20230226/
+#figures_manuscript_20231106/
+#figures_manuscript_20240304/
+#figures_manuscript_20241006/
+figures_manuscript_*
 
 # Misc. files
 Barta_elemzes/
 Újragondolt/**
-#!Újragondolt/dhat4_klaszterezes_NMDS.R
-#!Újragondolt/Co-occurrence_script.R
-#!Újragondolt/f_df_en.csv
-#!Újragondolt/f_df_en_60.csv
+!Újragondolt/dhat4_klaszterezes_NMDS.R
+!Újragondolt/Co-occurrence_script.R
+!Újragondolt/f_df_en.csv
+!Újragondolt/f_df_en_60.csv
 !Újragondolt/f_df_en_60_sample.csv
 !Újragondolt/encounter.qmd
 

@@ -110,7 +110,7 @@ summarize.monthly.surveys = function( f.df )
   return(summ)
 }
 
-draw.bnpi.gantt.chart = function( f.df )
+draw.bnpi.gantt.chart = function( f.df, use.sample=TRUE )
 {
   library(ggplot2)
   
@@ -124,30 +124,37 @@ draw.bnpi.gantt.chart = function( f.df )
   
   f.df.gantt = rbind(f.df1, f.df2)
   f.df.gantt = f.df.gantt[order(f.df.gantt$abs.time),]
-  camorder = unique(f.df.gantt$Helyszin)
-  camorder = camorder[!(camorder %in% c('Komlei_kanyar', 'Satai'))]
-  camorder = c(camorder[1:which(camorder == 'Komlei')], 'Komlei_kanyar', camorder[(which(camorder == 'Komlei')+1):length(camorder)] )
-  camorder = c(camorder[1:which(camorder == 'Satai_dagonya')], 'Satai', camorder[(which(camorder == 'Satai_dagonya')+1):length(camorder)] )
+  
+  f.df.gantt$date = as.Date(f.df.gantt$date)
+  
+  if (use.sample){
+    camorder = c('Site_1', 'Site_2', 'Site_3')
+  } else{
+    camorder = unique(f.df.gantt$Helyszin)
+    camorder = camorder[!(camorder %in% c('Komlei_kanyar', 'Satai'))]
+    camorder = c(camorder[1:which(camorder == 'Komlei')], 'Komlei_kanyar', camorder[(which(camorder == 'Komlei')+1):length(camorder)] )
+    camorder = c(camorder[1:which(camorder == 'Satai_dagonya')], 'Satai', camorder[(which(camorder == 'Satai_dagonya')+1):length(camorder)] )
+  }
   
   f.df.gantt$Helyszin = factor(f.df.gantt$Helyszin, levels = rev(camorder))
   
   #, color=Helyszin, group=szakaszID
-  g.gantt = ggplot(f.df.gantt, aes(date, Helyszin)) + geom_line(size=6) +
+  g.gantt = ggplot(f.df.gantt, aes(date, Helyszin)) + geom_line(linewidth=6) +
     #labs(x=NULL, y=NULL) + xlim(c(as.Date("2015-01-01"), as.Date("2020-01-01"))) +
-    labs(x=NULL, y=NULL) + xlim(c(min(f.df$Start), max(f.df$Stop))) +
+    labs(x=NULL, y=NULL) + xlim(c(as.Date(min(f.df$Start)), as.Date(max(f.df$Stop)))) +
     scale_y_discrete(labels = str_c('Site', rev(1:length(camorder)), sep = '_')) +
     theme(legend.position = "none", axis.text.x = element_text(size=12, face = "bold"), axis.text.y = element_text(size=12, face = "bold"))
   
   ggsave( paste0(figdir.gantt, 'bnpi_site_activity_gantt.tiff'), width = 8, height = 6, dpi = 300, units = 'in', compression='lzw')
   
-  g.gantt = ggplot(f.df.gantt, aes(date, Helyszin)) + geom_line(size=6) +
+  g.gantt = ggplot(f.df.gantt, aes(date, Helyszin)) + geom_line(linewidth=6) +
     #labs(x=NULL, y=NULL) + xlim(c(as.Date("2015-01-01"), as.Date("2020-01-01"))) +
-    labs(x=NULL, y=NULL) + xlim(c(min(f.df$Start), max(f.df$Stop))) +
+    labs(x=NULL, y=NULL) + xlim(c(as.Date(min(f.df$Start)), as.Date(max(f.df$Stop)))) +
     #scale_y_discrete(labels = str_c('Site', rev(1:length(camorder)), sep = '_')) +
     theme(legend.position = "none", axis.text.x = element_text(size=12, face = "bold"), axis.text.y = element_text(size=12, face = "bold"))
-  
+
   ggsave( paste0(figdir.gantt, 'bnpi_site_activity_gantt_sites.tiff'), width = 8, height = 6, dpi = 300, units = 'in', compression='lzw')
-  
+
   rm(f.df1)
   rm(f.df2)
   rm(f.df.gantt)
