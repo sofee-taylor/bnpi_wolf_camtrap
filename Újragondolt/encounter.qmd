@@ -1,0 +1,562 @@
+---
+title: Title
+date: 2023-08-23
+format:
+  html:
+    toc: true
+    code-fold: false
+    embed-resources: true
+
+bibliography: Farkasok.json
+---
+
+<!--
+  pdf:
+    standalone: true
+    natbib: true
+    biblio-title: References
+    fontsize: 12pt
+    papersize: a4paper
+    header-includes:
+      - \usepackage{double_spaced}
+      - \usepackage{lineno}
+    geometry:
+      - margin=1in
+    include-before:
+    - \linenumbers
+-->
+
+
+
+```{r load-libs}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(igraph)
+library(ggraph)
+library(tidygraph)
+```
+
+
+# Grouping by 60 minutes
+
+
+## Load data
+
+First, load the database.
+
+
+
+```{r load-data}
+f.df = read.csv2("f_df_en_60.csv")
+```
+
+We clean up the data frame, by setting the class of the variables.
+
+```{r clean-df}
+fc.df = f.df |>
+  mutate(operator = factor(Keszitette),
+         location = factor(Helyszin),
+         cam.start = as.Date(Start),
+         cam.end = as.Date(Stop),
+         date = as.Date(Datum),
+         rec.start = as.POSIXct(paste(Datum, Felvetel.kezdete),
+                                format="%Y-%m-%d %H:%M:%S"),
+         rec.end = as.POSIXct(paste(Datum, Felvetel.vege),
+                                format="%Y-%m-%d %H:%M:%S"),
+         event = factor(Felvetel.tartalma),
+         .keep="none"
+         ) |>
+  filter(cam.start < date & date < cam.end) |>
+  arrange(location, cam.start, date) |>
+  group_by(location, cam.start) |>
+  mutate(time0 = rec.end,
+         time1 = lead(rec.start),
+         event0 = event,
+         event1 = lead(event)
+         ) |>
+  mutate(time.diff = as.numeric(time1 - time0),
+				 time.diff2 = as.numeric(rec.start - lag(rec.end))
+         ) |>
+  as.data.frame()
+ID = paste(fc.df$location, fc.df$cam.start, sep=":")
+fc.df$ID = ID
+fc.df$recno = 1:nrow(fc.df)
+```
+
+
+Plot the histogram of time differences.
+
+```{r plot-time-diff}
+fc.df |>
+  ggplot(aes(x = time.diff)) +
+  geom_histogram() +
+  scale_x_log10()
+```
+
+
+## `msm`
+
+This is based on @jackson2023.
+
+```{r load-msm}
+library(msm)
+library(minqa)
+```
+
+```{r prepare-data-msm}
+m.df = data.frame(ID=fc.df$ID,
+									recno=fc.df$recno,
+									rec.start = fc.df$rec.start,
+									time= as.numeric(fc.df$rec.start
+																	 - as.POSIXct(as.character(fc.df$cam.start),
+																								format="%Y-%m-%d")),
+									event.f= fc.df$event0)
+d = as.numeric(fc.df$rec.end - fc.df$rec.start)
+i = fc.df$time.diff <= 0 | d < 0 | d > 3600
+m.df = m.df[!i,]
+m.df$event.f[m.df$event.f == "rider"] = "hiker"
+m.df = droplevels(m.df)
+m.df$event = as.numeric(m.df$event.f)
+m.df = m.df[order(m.df$ID, m.df$time),]
+m.df = m.df[!(m.df$ID == "Harsas02:2018-06-20" | m.df$ID ==
+            "Sugerkut:2015-10-07"),]
+```
+
+```{r state-matrix}
+statetable.msm(event.f, ID, m.df)
+statetable.msm(event, ID, m.df)
+```
+
+```{r Q-matrix}
+Q = matrix(rep(1/7, 49), ncol=7)
+```
+
+```{r crude-estimates}
+Q.crude = crudeinits.msm(event ~ time, ID, data=m.df, qmatrix=Q)
+```
+
+First fit.
+
+```{r first-msm-fit}
+fname = "msm_transition_intesities-60min.Rdata"
+if(file.exists(fname)) {
+	load(fname)
+} else {
+	m0 = msm(event ~ time, subject=ID, data=m.df, qmatrix=Q.crude,
+					 opt.method="bobyqa", control=list(maxfun=1e6))
+	save(m0, file=fname)
+}
+```
+
+### Plotting transition probabilities
+
+```{r prepare-data-transition}
+times = 10^seq(-2,1, 0.25)
+g = expand.grid(from=levels(m.df$event.f), to=levels(m.df$event.f))
+r = data.frame()
+for(tt in times) {
+	pm = pmatrix.msm(m0, tt)
+	d = data.frame(from=g$from, to=g$to, time=tt, prob=as.numeric(pm))
+	r = rbind(r, d)
+}
+```
+
+```{r plot-transition-probs2}
+r |> filter(time <= 1) |>
+ggplot(aes(x=time, y=prob, group=from, colour=from)) +
+	geom_point(aes(shape=from)) +
+	geom_line() +
+	scale_x_log10() +
+	scale_y_log10() +
+	#theme(axis.text.x=element_text(angle=45, hjust=1)) +
+	facet_wrap(~to, labeller="label_both")
+```
+
+```{r plot-transition-probs-column}
+r |> filter(time == 0.01) |>
+  ggplot(aes(x=from, y=prob, group=to, fill=from)) +
+    geom_line() +
+    geom_point() +
+    scale_y_log10() +
+    theme(axis.text.x=element_text(angle=45, hjust=1)) +
+    facet_wrap(~to, labeller="label_both")
+```
+
+### Plotting the probabilities of next states
+
+```{r calc-next-state-probs}
+pnext = pnext.msm(m0)
+pnext.df = data.frame(current.st=g$from, next.st=g$to,
+                      prob.next=as.numeric(pnext$estimates),
+                      prob.next.L=as.numeric(pnext$L),
+                      prob.next.U=as.numeric(pnext$U))
+pnext.df$current.type = "ungulates"
+pnext.df$current.type[grepl("(Vulpes|Canis)", pnext.df$current.st)] = "predator"
+pnext.df$current.type[grepl("(hiker|MV)", pnext.df$current.st)] = "human"
+pnext.df$current.type = factor(pnext.df$current.type)
+pnext.df$next.type = "ungulates"
+pnext.df$next.type[grepl("(Vulpes|Canis)", pnext.df$next.st)] = "predator"
+pnext.df$next.type[grepl("(hiker|MV)", pnext.df$next.st)] = "human"
+pnext.df$next.type = factor(pnext.df$next.type)
+pnext.df$current.st = factor(pnext.df$current.st,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+pnext.df$next.st = factor(pnext.df$next.st,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+pnext.df$prob.next.L[pnext.df$prob.next <= 0] = NA
+pnext.df$prob.next.U[pnext.df$prob.next <= 0] = NA
+pnext.df$prob.next[pnext.df$prob.next <= 0] = NA
+sojourn = sojourn.msm(m0)
+sojourn$state = levels(m.df$event.f)
+sojourn$state = factor(sojourn$state,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+sojourn$type = c("predator", "ungulate", "ungulate", "human", "human",
+                 "ungulate", "predator")
+```
+
+```{r matplot-next-state-probs}
+pnext.df$prob.next[is.na(pnext.df$prob.next)] = 0
+pnext.gg = ggplot(pnext.df, aes(x=next.st, y=current.st, fill=prob.next)) +
+  geom_tile() +
+  scale_fill_gradient(low="white", high="red") +
+  geom_text(aes(x=next.st, y=current.st, label=round(prob.next, 3))) +
+  scale_y_discrete(limits=rev) +
+  scale_x_discrete(position="top") +
+	theme(axis.text.x=element_text(angle=45, hjust=0)) +
+  labs(title="(b) probability of next state", x="next state",
+       y="current state", fill="probability\nof\nnext\nstate") +
+  theme(aspect.ratio=1, plot.title=element_text(hjust=0.5))
+pnext.gg
+
+sojourn.gg = ggplot(sojourn, aes(x=state, y=estimates, fill=type)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=L, ymax=U), width=0.2) +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        plot.title=element_text(hjust=0.5)) +
+  labs(title="(a) sojourn times", y="sojourn time (days)")
+
+sojourn.gg
+
+##grid.arrange(sojourn.gg, pnext.gg, layout_matrix=matrix(1:2, ncol=2))
+```
+
+
+### Network on the basis of next state probabilities and sojourns
+
+```{r create-graph-sojourn}
+g.qr = graph_from_adjacency_matrix(pnext$estimate, mode="directed",
+																	 weighted=TRUE, diag=FALSE)
+V(g.qr)$name = levels(m.df$event.f)
+V(g.qr)$size = sojourn$estimate
+V(g.qr)$type = c("predator", "ungulate", "ungulate", "human", "human",
+                 "ungulate", "predator")
+```
+
+```{r plot-graph-sojourn, eval=FALSE}
+plot(g.qr, edge.width=10*E(g.qr)$weight, edge.curved=TRUE,
+     edge.arrow.size=1.5, vertex.color=c(1, 2, 2, 3, 3, 2, 1),
+     vertex.size=V(g.qr)$size*250)
+```
+
+```{r ggplot-graph-sojourn}
+
+set.seed(4)
+layout = create_layout(g.qr, layout="nicely")
+set.seed(NULL)
+##graph.gg = ggraph(g.qr, layout="nicely") +
+graph.gg = ggraph(layout) +
+  ggtitle("(c) transition diagram") +
+  geom_edge_fan(aes(width=weight), colour="grey", alpha=0.5,
+                #strength=0.95,
+                arrow=arrow(length=unit(4, "mm"), type="closed"),
+                #start_cap=square(3, 'mm'),
+                end_cap=circle(10, "mm"), show.legend=FALSE) +
+  geom_edge_fan(aes(width=weight), #strength=0.95,
+                alpha=0.5,
+                show.legend=FALSE,
+                colour="grey") +
+  scale_edge_width(range=c(0.01, 3)) +
+  #geom_node_point(size=250*V(g.qr)$size, aes(colour=type)) +
+  geom_node_point(aes(size=size, colour=type), show.legend=FALSE) +
+  scale_radius(range=c(10,25)) +
+  geom_node_text(aes(label=name)) +
+  theme_void() +
+  theme(aspect.ratio=1, plot.title=element_text(hjust=0.5))
+graph.gg
+
+pdf(file="transitions-60min.pdf", width=15, height=12)
+grid.arrange(sojourn.gg, pnext.gg, graph.gg,
+             layout_matrix=matrix(c(1, 2, 3, 3), ncol=2))
+dev.off()
+
+```
+
+# Grouping by 15 minutes
+
+
+## Load data
+
+First, load the database.
+
+
+
+```{r load-data}
+f.df = read.csv("bnpi_wolf_camtrap/Újragondolt/f_df_en.csv")
+```
+
+We clean up the data frame, by setting the class of the variables.
+
+```{r clean-df}
+fc.df = f.df |>
+  mutate(operator = factor(Keszitette),
+         location = factor(Helyszin),
+         cam.start = as.Date(Start),
+         cam.end = as.Date(Stop),
+         date = as.Date(Datum),
+         rec.start = as.POSIXct(paste(Datum, Felvetel.kezdete),
+                                format="%Y-%m-%d %H:%M:%S"),
+         rec.end = as.POSIXct(paste(Datum, Felvetel.vege),
+                                format="%Y-%m-%d %H:%M:%S"),
+         event = factor(Felvetel.tartalma),
+         .keep="none"
+         ) |>
+  filter(cam.start < date & date < cam.end) |>
+  arrange(location, cam.start, date) |>
+  group_by(location, cam.start) |>
+  mutate(time0 = rec.end,
+         time1 = lead(rec.start),
+         event0 = event,
+         event1 = lead(event)
+         ) |>
+  mutate(time.diff = as.numeric(time1 - time0),
+				 time.diff2 = as.numeric(rec.start - lag(rec.end))
+         ) |>
+  as.data.frame()
+ID = paste(fc.df$location, fc.df$cam.start, sep=":")
+fc.df$ID = ID
+fc.df$recno = 1:nrow(fc.df)
+```
+
+
+Plot the histogram of time differences.
+
+```{r plot-time-diff}
+fc.df |>
+  ggplot(aes(x = time.diff)) +
+  geom_histogram() +
+  scale_x_log10()
+```
+
+
+## `msm`
+
+This is based on @jackson2023.
+
+```{r load-msm}
+library(msm)
+library(minqa)
+```
+
+```{r prepare-data-msm}
+m.df = data.frame(ID=fc.df$ID,
+									recno=fc.df$recno,
+									rec.start = fc.df$rec.start,
+									time= as.numeric(fc.df$rec.start
+																	 - as.POSIXct(as.character(fc.df$cam.start),
+																								format="%Y-%m-%d")),
+									event.f= fc.df$event0)
+d = as.numeric(fc.df$rec.end - fc.df$rec.start)
+i = fc.df$time.diff <= 0 | d < 0 | d > 3600
+m.df = m.df[!i,]
+m.df$event.f[m.df$event.f == "rider"] = "hiker"
+m.df = droplevels(m.df)
+m.df$event = as.numeric(m.df$event.f)
+m.df = m.df[order(m.df$ID, m.df$time),]
+m.df = m.df[!(m.df$ID == "Harsas02:2018-06-20" | m.df$ID ==
+            "Sugerkut:2015-10-07"),]
+```
+
+```{r state-matrix}
+statetable.msm(event.f, ID, m.df)
+statetable.msm(event, ID, m.df)
+```
+
+```{r Q-matrix}
+Q = matrix(rep(1/7, 49), ncol=7)
+```
+
+```{r crude-estimates}
+Q.crude = crudeinits.msm(event ~ time, ID, data=m.df, qmatrix=Q)
+```
+
+First fit.
+
+```{r first-msm-fit}
+fname = "msm_transition_intesities.Rdata"
+if(file.exists(fname)) {
+	load(fname)
+} else {
+	m0 = msm(event ~ time, subject=ID, data=m.df, qmatrix=Q.crude,
+					 opt.method="bobyqa", control=list(maxfun=1e6))
+	save(m0, file=fname)
+}
+```
+
+### Plotting transition probabilities
+
+```{r prepare-data-transition}
+times = 10^seq(-2,1, 0.25)
+g = expand.grid(from=levels(m.df$event.f), to=levels(m.df$event.f))
+r = data.frame()
+for(tt in times) {
+	pm = pmatrix.msm(m0, tt)
+	d = data.frame(from=g$from, to=g$to, time=tt, prob=as.numeric(pm))
+	r = rbind(r, d)
+}
+```
+
+```{r plot-transition-probs2}
+r |> filter(time <= 1) |>
+ggplot(aes(x=time, y=prob, group=from, colour=from)) +
+	geom_point(aes(shape=from)) +
+	geom_line() +
+	scale_x_log10() +
+	scale_y_log10() +
+	#theme(axis.text.x=element_text(angle=45, hjust=1)) +
+	facet_wrap(~to, labeller="label_both")
+```
+
+```{r plot-transition-probs-column}
+r |> filter(time == 0.01) |>
+  ggplot(aes(x=from, y=prob, group=to, fill=from)) +
+    geom_line() +
+    geom_point() +
+    scale_y_log10() +
+    theme(axis.text.x=element_text(angle=45, hjust=1)) +
+    facet_wrap(~to, labeller="label_both")
+```
+
+### Plotting the probabilities of next states
+
+```{r calc-next-state-probs}
+pnext = pnext.msm(m0)
+pnext.df = data.frame(current.st=g$from, next.st=g$to,
+                      prob.next=as.numeric(pnext$estimates),
+                      prob.next.L=as.numeric(pnext$L),
+                      prob.next.U=as.numeric(pnext$U))
+pnext.df$current.type = "ungulates"
+pnext.df$current.type[grepl("(Vulpes|Canis)", pnext.df$current.st)] = "predator"
+pnext.df$current.type[grepl("(hiker|MV)", pnext.df$current.st)] = "human"
+pnext.df$current.type = factor(pnext.df$current.type)
+pnext.df$next.type = "ungulates"
+pnext.df$next.type[grepl("(Vulpes|Canis)", pnext.df$next.st)] = "predator"
+pnext.df$next.type[grepl("(hiker|MV)", pnext.df$next.st)] = "human"
+pnext.df$next.type = factor(pnext.df$next.type)
+pnext.df$current.st = factor(pnext.df$current.st,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+pnext.df$next.st = factor(pnext.df$next.st,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+pnext.df$prob.next.L[pnext.df$prob.next <= 0] = NA
+pnext.df$prob.next.U[pnext.df$prob.next <= 0] = NA
+pnext.df$prob.next[pnext.df$prob.next <= 0] = NA
+sojourn = sojourn.msm(m0)
+sojourn$state = levels(m.df$event.f)
+sojourn$state = factor(sojourn$state,
+                             levels=c("hiker", "MV", "Canis lupus",
+                                      "Vulpes vulpes", "Capreolus capreolus",
+                                      "Cervus elaphus", "Sus scrofa"))
+sojourn$type = c("predator", "ungulate", "ungulate", "human", "human",
+                 "ungulate", "predator")
+```
+
+```{r matplot-next-state-probs}
+pnext.df$prob.next[is.na(pnext.df$prob.next)] = 0
+pnext.gg = ggplot(pnext.df, aes(x=next.st, y=current.st, fill=prob.next)) +
+  geom_tile() +
+  scale_fill_gradient(low="white", high="red") +
+  geom_text(aes(x=next.st, y=current.st, label=round(prob.next, 2))) +
+  scale_y_discrete(limits=rev) +
+  scale_x_discrete(position="top") +
+	theme(axis.text.x=element_text(angle=45, hjust=0)) +
+  labs(title="(b) probability of next state", x="next state",
+       y="current state", fill="probability\nof\nnext\nstate") +
+  theme(aspect.ratio=1, plot.title=element_text(hjust=0.5))
+##pnext.gg
+sojourn.gg = ggplot(sojourn, aes(x=state, y=estimates, fill=type)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=L, ymax=U), width=0.2) +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        plot.title=element_text(hjust=0.5)) +
+  labs(title="(a) sojourn times", y="sojourn time (days)")
+##sojourn.gg
+
+##grid.arrange(sojourn.gg, pnext.gg, layout_matrix=matrix(1:2, ncol=2))
+```
+
+
+### Network on the basis of next state probabilities and sojourns
+
+```{r create-graph-sojourn}
+g.qr = graph_from_adjacency_matrix(pnext$estimate, mode="directed",
+																	 weighted=TRUE, diag=FALSE)
+V(g.qr)$name = levels(m.df$event.f)
+V(g.qr)$size = sojourn$estimate
+V(g.qr)$type = c("predator", "ungulate", "ungulate", "human", "human",
+                 "ungulate", "predator")
+```
+
+```{r plot-graph-sojourn, eval=FALSE}
+plot(g.qr, edge.width=10*E(g.qr)$weight, edge.curved=TRUE,
+     edge.arrow.size=1.5, vertex.color=c(1, 2, 2, 3, 3, 2, 1),
+     vertex.size=V(g.qr)$size*250)
+```
+
+```{r ggplot-graph-sojourn}
+set.seed(8)
+layout = create_layout(g.qr, layout="nicely")
+set.seed(NULL)
+##graph.gg = ggraph(g.qr, layout="nicely") +
+graph.gg = ggraph(layout) +
+  ggtitle("(c) transition diagram") +
+  geom_edge_fan(aes(width=weight), colour="grey", #alpha=0.25,
+                #strength=0.95,
+                arrow=arrow(length=unit(4, "mm"), type="closed"),
+                #start_cap=square(3, 'mm'),
+                end_cap=circle(10, "mm"), show.legend=FALSE) +
+  geom_edge_fan(aes(width=weight), #strength=0.95,
+                #alpha=0.5,
+                show.legend=FALSE,
+                colour="grey") +
+  scale_edge_width(range=c(0.1, 2)) +
+  #geom_node_point(size=250*V(g.qr)$size, aes(colour=type)) +
+  geom_node_point(aes(size=size, colour=type), show.legend=FALSE) +
+  scale_radius(range=c(10,25)) +
+  geom_node_text(aes(label=name)) +
+  theme_void() +
+  theme(aspect.ratio=1, plot.title=element_text(hjust=0.5))
+graph.gg
+
+pdf(file="transitions.pdf", width=15, height=12)
+grid.arrange(sojourn.gg, pnext.gg, graph.gg,
+             layout_matrix=matrix(c(1, 2, 3, 3), ncol=2))
+dev.off()
+
+```
+
+# End matters
+
+```{r session-info, include=TRUE, echo=TRUE, results="markup"}
+sessionInfo()
+```
+
+<!-- vim: set foldmethod=syntax: -->
